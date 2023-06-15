@@ -1,0 +1,16 @@
+syntax = "proto3";
+package microservices.authentication.grpc;
+
+message AuthenticationRequest {
+    string username = 1;
+    string password = 2;
+}
+
+message AuthenticationResponse {
+    string accessToken = 1;
+    string refreshToken = 2;
+}
+
+service Authentication {
+    rpc authenticate(AuthenticationRequest) returns (AuthenticationResponse);
+}

@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: task-io-authentication-deployment
+  labels:
+    app: task-io-authentication
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: task-io-authentication
+  template:
+    metadata:
+      labels:
+        app: task-io-authentication
+    spec:
+      containers:
+        - name: task-io-authentication
+          image: pyankovdaniil/task.io.authentication
+          ports:
+            - name: rest
+              containerPort: 8080
+            - name: grpc
+              containerPort: 8081
+          env:
+            - name: MONGO_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-secret
+                  key: mongo-user
+            - name: MONGO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-secret
+                  key: mongo-password
+            - name: MONGO_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: mongo-config
+                  key: mongo-url
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: redis-config
+                  key: redis-url
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: task-io-authentication-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: task-io-authentication
+  ports:
+    - protocol: TCP
+      name: rest
+      port: 8080
+      targetPort: 8080
+    - protocol: TCP
+      name: grpc
+      port: 8081
+      targetPort: 8081
