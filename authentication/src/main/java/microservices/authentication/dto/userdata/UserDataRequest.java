@@ -1,4 +1,4 @@
-package microservices.authentication.dto.authenticate;
+package microservices.authentication.dto.userdata;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class AuthenticationRequest {
-    private String email;
-    private String password;
+public class UserDataRequest {
+    private String refreshToken;
 }

@@ -1,10 +1,14 @@
 package microservices.authentication.dto.refresh;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-public class RefreshTokensResponse {
+@AllArgsConstructor
+@NoArgsConstructor
+public class RefreshResponse {
     private String accessToken;
 }

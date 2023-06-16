@@ -1,5 +1,6 @@
 package microservices.authentication.api.rest;
 
+import java.time.Duration;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -10,10 +11,13 @@ import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
 import microservices.authentication.dto.authenticate.AuthenticationRequest;
-import microservices.authentication.dto.authenticate.AuthenticationTokensResponse;
-import microservices.authentication.dto.refresh.RefreshTokensRequest;
-import microservices.authentication.dto.refresh.RefreshTokensResponse;
+import microservices.authentication.dto.authenticate.AuthenticationResponse;
+import microservices.authentication.dto.logout.LogoutRequest;
+import microservices.authentication.dto.refresh.RefreshRequest;
+import microservices.authentication.dto.refresh.RefreshResponse;
 import microservices.authentication.dto.register.RegistrationRequest;
+import microservices.authentication.dto.userdata.UserDataRequest;
+import microservices.authentication.jwt.JwtService;
 import microservices.authentication.jwt.TokensGenerationResponse;
 import microservices.authentication.jwt.TokensGenerator;
 import microservices.authentication.mapping.ObjectMapperWrapper;
@@ -32,6 +36,7 @@ public class AuthenticationRestService {
     private final EmailValidator emailValidator;
     private final TokensGenerator tokensGenerator;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
     private final RedisTemplate<String, String> redisTemplate;
 
     public boolean register(RegistrationRequest request) {
@@ -58,7 +63,7 @@ public class AuthenticationRestService {
         return true;
     }
 
-    public Optional<AuthenticationTokensResponse> authenticate(AuthenticationRequest request) {
+    public Optional<AuthenticationResponse> authenticate(AuthenticationRequest request) {
         if (!emailValidator.isValidEmail(request.getEmail())) {
             return Optional.empty();
         }
@@ -80,17 +85,73 @@ public class AuthenticationRestService {
                 objectMapper.toPrettyJson(userInDatabase.get()));
 
         TokensGenerationResponse tokens = tokensGenerator.generateTokensForUser(userInDatabase.get());
-        logger.info("Successfully generated tokens for user:\n{}",
+        redisTemplate.opsForValue().set(request.getEmail(), tokens.getRefreshToken(),
+                Duration.ofMillis(jwtService.getRefreshTokenExpireTimeMs()));
+        logger.info("Successfully generated and saved to redis tokens for user:\n{}",
                 objectMapper.toPrettyJson(userInDatabase.get()));
 
-        return Optional.of(AuthenticationTokensResponse.builder()
+        return Optional.of(AuthenticationResponse.builder()
                 .accessToken(tokens.getAccessToken())
                 .refreshToken(tokens.getRefreshToken())
                 .build());
     }
 
-    public Optional<RefreshTokensResponse> refresh(RefreshTokensRequest request) {
-        redisTemplate.opsForValue().set("harry", "potter");
+    public Optional<RefreshResponse> refresh(RefreshRequest request) {
+        Optional<String> email = jwtService.extractEmailFromToken(request.getRefreshToken());
+        if (email.isPresent()) {
+            Optional<String> savedRefreshToken = Optional.ofNullable(redisTemplate.opsForValue().get(email.get()));
+            if (savedRefreshToken.isEmpty()) {
+                return Optional.empty();
+            }
+
+            Optional<User> user = userRepository.findUserByEmail(email.get());
+            if (user.isPresent()) {
+                logger.info("Successfully found this user in database:\n{}",
+                        objectMapper.toPrettyJson(user.get()));
+
+                return Optional.of(RefreshResponse.builder()
+                        .accessToken(jwtService.generateAccessToken(user.get())).build());
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    public boolean logout(LogoutRequest request) {
+        Optional<String> email = jwtService.extractEmailFromToken(request.getRefreshToken());
+        if (email.isPresent()) {
+            Optional<String> savedRefreshToken = Optional.ofNullable(redisTemplate.opsForValue().get(email.get()));
+            if (savedRefreshToken.isEmpty()) {
+                return false;
+            }
+
+            redisTemplate.opsForValue().getAndDelete(email.get());
+            logger.info("Successfully deleted resfresh token for user with email:\n{}",
+                    email.get());
+            
+            return true;
+        }
+
+        return false;
+    }
+
+    public Optional<User> getUserData(UserDataRequest request) {
+        Optional<String> email = jwtService.extractEmailFromToken(request.getRefreshToken());
+        if (email.isPresent()) {
+            Optional<String> savedRefreshToken = Optional.ofNullable(redisTemplate.opsForValue().get(email.get()));
+            if (savedRefreshToken.isEmpty()) {
+                return Optional.empty();
+            }
+
+            Optional<User> user = userRepository.findUserByEmail(email.get());
+            if (user.isPresent()) {
+                logger.info("Successfully found this user in database:\n{}",
+                        objectMapper.toPrettyJson(user.get()));
+
+                return user;
+            }
+        }
+
         return Optional.empty();
     }
 }

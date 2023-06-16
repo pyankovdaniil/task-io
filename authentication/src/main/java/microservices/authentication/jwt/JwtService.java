@@ -14,12 +14,18 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.Getter;
 import microservices.authentication.user.User;
 
 @Component
 public class JwtService {
-    private final int JWT_EXPIRE_TIME_MS = 30 * 60 * 1000;
-    private final int REFRESH_TOKEN_EXPIRE_TIME_MS = 2 * 24 * 60 * 60 * 1000;
+    @Value("${jwt.access-token-expire-time-ms}")
+    @Getter
+    private Integer accessTokenExpireTimeMs;
+
+    @Value("${jwt.refresh-token-expire-time-ms}")
+    @Getter
+    private Integer refreshTokenExpireTimeMs;
 
     @Value("${jwt.secret-key}")
     private String secretKey;
@@ -51,7 +57,7 @@ public class JwtService {
                 .setClaims(Map.of())
                 .setSubject(user.getEmail())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + JWT_EXPIRE_TIME_MS))
+                .setExpiration(new Date(System.currentTimeMillis() + accessTokenExpireTimeMs))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -62,7 +68,7 @@ public class JwtService {
                 .setClaims(Map.of())
                 .setSubject(user.getEmail())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + REFRESH_TOKEN_EXPIRE_TIME_MS))
+                .setExpiration(new Date(System.currentTimeMillis() + refreshTokenExpireTimeMs))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
