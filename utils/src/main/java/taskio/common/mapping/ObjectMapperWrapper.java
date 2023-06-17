@@ -1,11 +1,8 @@
-package microservices.authentication.mapping;
-
-import org.springframework.stereotype.Component;
+package taskio.common.mapping;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-@Component
 public class ObjectMapperWrapper {
     private final ObjectMapper objectMapper = new ObjectMapper();
 

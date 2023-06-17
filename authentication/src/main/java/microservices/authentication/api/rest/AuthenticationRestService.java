@@ -10,21 +10,21 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
-import microservices.authentication.dto.authenticate.AuthenticationRequest;
-import microservices.authentication.dto.authenticate.AuthenticationResponse;
-import microservices.authentication.dto.logout.LogoutRequest;
-import microservices.authentication.dto.refresh.RefreshRequest;
-import microservices.authentication.dto.refresh.RefreshResponse;
-import microservices.authentication.dto.register.RegistrationRequest;
-import microservices.authentication.dto.userdata.UserDataRequest;
 import microservices.authentication.jwt.JwtService;
 import microservices.authentication.jwt.TokensGenerationResponse;
 import microservices.authentication.jwt.TokensGenerator;
-import microservices.authentication.mapping.ObjectMapperWrapper;
 import microservices.authentication.user.User;
 import microservices.authentication.user.UserRepository;
 import microservices.authentication.user.UserRole;
-import microservices.authentication.validation.EmailValidator;
+import taskio.common.dto.authentication.authenticate.AuthenticationRequest;
+import taskio.common.dto.authentication.authenticate.AuthenticationResponse;
+import taskio.common.dto.authentication.logout.LogoutRequest;
+import taskio.common.dto.authentication.refresh.RefreshRequest;
+import taskio.common.dto.authentication.refresh.RefreshResponse;
+import taskio.common.dto.authentication.register.RegistrationRequest;
+import taskio.common.dto.authentication.userdata.UserDataRequest;
+import taskio.common.mapping.ObjectMapperWrapper;
+import taskio.common.validation.EmailValidator;
 
 @Service
 @RequiredArgsConstructor

@@ -8,21 +8,20 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
-import microservices.authentication.dto.authenticate.AuthenticationRequest;
-import microservices.authentication.dto.authenticate.AuthenticationResponse;
-import microservices.authentication.dto.logout.LogoutRequest;
-import microservices.authentication.dto.message.ResponseMessage;
-import microservices.authentication.dto.refresh.RefreshRequest;
-import microservices.authentication.dto.refresh.RefreshResponse;
-import microservices.authentication.dto.register.RegistrationRequest;
-import microservices.authentication.dto.userdata.UserDataRequest;
 import microservices.authentication.jwt.JwtService;
-import microservices.authentication.mapping.ObjectMapperWrapper;
 import microservices.authentication.user.User;
+import taskio.common.dto.authentication.authenticate.AuthenticationRequest;
+import taskio.common.dto.authentication.authenticate.AuthenticationResponse;
+import taskio.common.dto.authentication.logout.LogoutRequest;
+import taskio.common.dto.authentication.message.ResponseMessage;
+import taskio.common.dto.authentication.refresh.RefreshRequest;
+import taskio.common.dto.authentication.refresh.RefreshResponse;
+import taskio.common.dto.authentication.register.RegistrationRequest;
+import taskio.common.dto.authentication.userdata.UserDataRequest;
+import taskio.common.mapping.ObjectMapperWrapper;
 
 @RestController
 @RequestMapping("rest/api/v1/auth")

@@ -1,4 +1,4 @@
-package microservices.authentication.dto.userdata;
+package taskio.common.dto.authentication.logout;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,6 +9,6 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserDataRequest {
+public class LogoutRequest {
     private String refreshToken;
 }

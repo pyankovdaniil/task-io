@@ -6,5 +6,8 @@ clean:
 build: clean
 	@mvn package
 
-run: build
+install: clean
+	@mvn install
+
+run: install
 	@java -jar ${JAR_FILE_NAME}

@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: task-io-authentication
-          image: pyankovdaniil/task.io.authentication
+          image: pyankovdaniil/task-io-authentication
           ports:
             - name: rest
               containerPort: 8080

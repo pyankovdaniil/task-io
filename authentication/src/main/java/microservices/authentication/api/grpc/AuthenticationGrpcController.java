@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import io.grpc.stub.StreamObserver;
 import microservices.authentication.grpc.AuthenticationGrpc;
 import microservices.authentication.grpc.AuthenticationOuterClass;
-import microservices.authentication.mapping.ObjectMapperWrapper;
+import taskio.common.mapping.ObjectMapperWrapper;
 
 public class AuthenticationGrpcController extends AuthenticationGrpc.AuthenticationImplBase {
     private final Logger logger = LoggerFactory.getLogger(AuthenticationGrpcController.class);

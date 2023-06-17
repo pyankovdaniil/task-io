@@ -1,4 +1,4 @@
-package microservices.projects.dto.create;
+package taskio.common.dto.projects;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -7,8 +7,8 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 public class CreateRequest {
     private String projectName;
 }

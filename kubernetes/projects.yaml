@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: task-io-projects
-          image: pyankovdaniil/task.io.projects
+          image: pyankovdaniil/task-io-projects
           ports:
             - name: rest
               containerPort: 8082

@@ -1,4 +1,4 @@
-package microservices.authentication.dto.register;
+package taskio.common.dto.authentication.register;
 
 import lombok.Data;
 
