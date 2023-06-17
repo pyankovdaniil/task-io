@@ -10,9 +10,9 @@
 		<relativePath />
 	</parent>
 
-	<groupId>microservices.authentication</groupId>
+	<groupId>taskio.microservices</groupId>
 	<artifactId>authentication</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0</version>
 	<name>Authenctication Microservice</name>
 	<description>Microservice for authenticating users</description>
 
@@ -28,6 +28,8 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
+
+		<!-- Testing -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
@@ -152,7 +154,6 @@
 					<layout>JAR</layout>
 				</configuration>
 			</plugin>
-
 		</plugins>
 		<finalName>authentication</finalName>
 	</build>

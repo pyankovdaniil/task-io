@@ -1,4 +1,5 @@
 kubectl delete -f ./ingress.yaml
+kubectl delete -f ./projects.yaml
 kubectl delete -f ./authentication.yaml
 kubectl delete -f ./mongo.yaml
 kubectl delete -f ./mongo-secret.yaml

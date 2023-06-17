@@ -15,3 +15,10 @@ spec:
                 name: task-io-authentication-service
                 port:
                   number: 8080
+          - path: /rest/api/v1/projects
+            pathType: Prefix
+            backend:
+              service:
+                name: task-io-projects-service
+                port:
+                  number: 8082
