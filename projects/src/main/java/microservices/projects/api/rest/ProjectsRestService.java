@@ -26,14 +26,18 @@ public class ProjectsRestService {
         ExtractEmailRequest extractEmailRequest = ExtractEmailRequest.builder()
                 .accessToken(bearerToken.substring(authHeaderPrefix.length() + 1)).build();
 
-        ResponseEntity<?> emailResponse = authenticationClient.extractEmail(extractEmailRequest);
-        if (emailResponse.getStatusCode().equals(HttpStatusCode.valueOf(HttpStatus.OK.value()))) {
-            if (emailResponse.getBody() instanceof String email) {
-                logger.info("Successfully extracted email: {}", email);
-                return true;
+        try {
+            ResponseEntity<?> emailResponse = authenticationClient.extractEmail(extractEmailRequest);
+            if (emailResponse.getStatusCode().equals(HttpStatusCode.valueOf(HttpStatus.OK.value()))) {
+                if (emailResponse.getBody() instanceof String email) {
+                    logger.info("Successfully extracted email: {}", email);
+                    return true;
+                }
             }
+            
+            return false;
+        } catch (Exception exception) {
+            return false;
         }
-
-        return false;
     }
 }
