@@ -18,6 +18,7 @@ import microservices.authentication.user.UserRepository;
 import microservices.authentication.user.UserRole;
 import taskio.common.dto.authentication.authenticate.AuthenticationRequest;
 import taskio.common.dto.authentication.authenticate.AuthenticationResponse;
+import taskio.common.dto.authentication.extractemail.ExtractEmailRequest;
 import taskio.common.dto.authentication.logout.LogoutRequest;
 import taskio.common.dto.authentication.refresh.RefreshRequest;
 import taskio.common.dto.authentication.refresh.RefreshResponse;

@@ -15,6 +15,7 @@ import microservices.authentication.jwt.JwtService;
 import microservices.authentication.user.User;
 import taskio.common.dto.authentication.authenticate.AuthenticationRequest;
 import taskio.common.dto.authentication.authenticate.AuthenticationResponse;
+import taskio.common.dto.authentication.extractemail.ExtractEmailRequest;
 import taskio.common.dto.authentication.logout.LogoutRequest;
 import taskio.common.dto.authentication.message.ResponseMessage;
 import taskio.common.dto.authentication.refresh.RefreshRequest;
@@ -82,6 +83,23 @@ public class AuthenticationRestController {
 
         return ResponseEntity.badRequest().body(ResponseMessage
                 .withMessage("Invalid or expired refresh token, can not refresh"));
+    }
+
+    @PostMapping("/extract-email")
+    public ResponseEntity<?> extractEmail(@RequestBody ExtractEmailRequest request) {
+        logger.info("POST /extract-email request received with data:\n{}",
+                objectMapper.toPrettyJson(request));
+
+        Optional<String> email = jwtService.extractEmailFromToken(request.getAccessToken());
+        if (email.isPresent()) {
+            logger.info("Successfully extracted email for user with email:\n{}",
+                    email.get());
+            
+            return ResponseEntity.ok(email.get());
+        }
+
+        return ResponseEntity.badRequest().body(ResponseMessage
+        .withMessage("Can not extract email. Invalid or expired access token"));
     }
 
     @PostMapping("/logout")
