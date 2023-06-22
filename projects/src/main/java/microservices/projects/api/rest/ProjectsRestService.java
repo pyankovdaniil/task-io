@@ -1,6 +1,7 @@
 package microservices.projects.api.rest;
 
 import java.util.Date;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,11 +13,13 @@ import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
 import microservices.projects.clients.AuthenticationClient;
+import microservices.projects.member.ProjectMember;
+import microservices.projects.member.ProjectMemberRepository;
 import microservices.projects.project.Project;
 import microservices.projects.project.ProjectRepository;
 import taskio.common.dto.authentication.userdata.UserDataRequest;
 import taskio.common.dto.authentication.userdata.UserDataResponse;
-import taskio.common.dto.projects.CreateRequest;
+import taskio.common.dto.projects.create.CreateRequest;
 import taskio.common.mapping.ObjectMapperWrapper;
 
 @Service
@@ -25,6 +28,7 @@ public class ProjectsRestService {
     private final Logger logger = LoggerFactory.getLogger(ProjectsRestController.class);
     private final AuthenticationClient authenticationClient;
     private final ProjectRepository projectRepository;
+    private final ProjectMemberRepository projectMemberRepository;
     private final ObjectMapperWrapper objectMapper;
 
     @Value("${request.auth-header-prefix}")
@@ -41,14 +45,23 @@ public class ProjectsRestService {
                     logger.info("Successfully extracted user data:\n{}",
                             objectMapper.toPrettyJson(userData));
 
-                    Project newProject = Project.builder()
-                            .name(request.getProjectName())
-                            .creatorEmail(userData.getEmail())
-                            .creationDate(new Date(System.currentTimeMillis()))
+                    ProjectMember creator = ProjectMember.builder()
+                            .email(userData.getEmail())
+                            .fullName(userData.getFullName())
+                            .role("Creator")
                             .build();
 
-                    logger.info("Now this project will be saved to db:\n{}",
-                            objectMapper.toPrettyJson(newProject));
+                    projectMemberRepository.save(creator);
+                    logger.info("Successfully saved creator of the project:\n{}",
+                            objectMapper.toPrettyJson(creator));
+
+                    Project newProject = Project.builder()
+                            .name(request.getName())
+                            .description(request.getDescription())
+                            .creatorEmail(userData.getEmail())
+                            .creationDate(new Date(System.currentTimeMillis()))
+                            .members(List.of(creator))
+                            .build();
 
                     projectRepository.save(newProject);
                     logger.info("Successfully saved project:\n{}",
@@ -62,6 +75,7 @@ public class ProjectsRestService {
         } catch (Exception exception) {
             logger.error("Caught {} with message: {}", exception.getClass().getSimpleName(),
                     exception.getMessage());
+
             return false;
         }
     }

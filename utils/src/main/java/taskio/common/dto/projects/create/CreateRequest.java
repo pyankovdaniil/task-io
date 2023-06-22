@@ -1,4 +1,4 @@
-package taskio.common.dto.projects;
+package taskio.common.dto.projects.create;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,5 +10,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CreateRequest {
-    private String projectName;
+    private String name;
+    private String description;
 }

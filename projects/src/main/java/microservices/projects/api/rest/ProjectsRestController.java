@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import taskio.common.dto.authentication.message.ResponseMessage;
-import taskio.common.dto.projects.CreateRequest;
+import taskio.common.dto.projects.create.CreateRequest;
 import taskio.common.mapping.ObjectMapperWrapper;
 
 @RestController
