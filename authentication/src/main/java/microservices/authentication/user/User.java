@@ -19,5 +19,4 @@ public class User {
     private String email;
     private String password;
     private String fullName;
-    private UserRole role;
 }

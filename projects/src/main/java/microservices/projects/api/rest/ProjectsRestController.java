@@ -38,6 +38,6 @@ public class ProjectsRestController {
         }
 
         return ResponseEntity.badRequest().body(ResponseMessage
-                .withMessage("Can not create project. Expired or invalid refresh token"));
+                .withMessage("Can not create project. Expired or invalid access token"));
     }
 }

@@ -1,4 +1,4 @@
-package taskio.common.dto.authentication.extractemail;
+package taskio.common.dto.authentication.userdata;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ExtractEmailResponse {
+public class UserDataResponse {
     private String email;
+    private String fullName;
 }

@@ -12,16 +12,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
 import microservices.authentication.jwt.JwtService;
-import microservices.authentication.user.User;
 import taskio.common.dto.authentication.authenticate.AuthenticationRequest;
 import taskio.common.dto.authentication.authenticate.AuthenticationResponse;
-import taskio.common.dto.authentication.extractemail.ExtractEmailRequest;
 import taskio.common.dto.authentication.logout.LogoutRequest;
 import taskio.common.dto.authentication.message.ResponseMessage;
 import taskio.common.dto.authentication.refresh.RefreshRequest;
 import taskio.common.dto.authentication.refresh.RefreshResponse;
 import taskio.common.dto.authentication.register.RegistrationRequest;
 import taskio.common.dto.authentication.userdata.UserDataRequest;
+import taskio.common.dto.authentication.userdata.UserDataResponse;
 import taskio.common.mapping.ObjectMapperWrapper;
 
 @RestController
@@ -85,23 +84,6 @@ public class AuthenticationRestController {
                 .withMessage("Invalid or expired refresh token, can not refresh"));
     }
 
-    @PostMapping("/extract-email")
-    public ResponseEntity<?> extractEmail(@RequestBody ExtractEmailRequest request) {
-        logger.info("POST /extract-email request received with data:\n{}",
-                objectMapper.toPrettyJson(request));
-
-        Optional<String> email = jwtService.extractEmailFromToken(request.getAccessToken());
-        if (email.isPresent()) {
-            logger.info("Successfully extracted email for user with email:\n{}",
-                    email.get());
-            
-            return ResponseEntity.ok(email.get());
-        }
-
-        return ResponseEntity.badRequest().body(ResponseMessage
-        .withMessage("Can not extract email. Invalid or expired access token"));
-    }
-
     @PostMapping("/logout")
     public ResponseEntity<?> logout(@RequestBody LogoutRequest request) {
         logger.info("POST /logout request received with data:\n{}",
@@ -109,14 +91,14 @@ public class AuthenticationRestController {
 
         if (authenticationService.logout(request)) {
             logger.info("User with email {} was successfully logged out",
-                    jwtService.extractEmailFromToken(request.getRefreshToken()));
+                    jwtService.extractEmailFromToken(request.getAccessToken()));
 
             return ResponseEntity.ok(ResponseMessage
                     .withMessage("Logout was successful"));
         }
 
         return ResponseEntity.badRequest().body(ResponseMessage
-                .withMessage("Could not logout, expired or invalid refresh token"));
+                .withMessage("Could not logout, expired or invalid access token"));
     }
 
     @PostMapping("/user-data")
@@ -124,12 +106,12 @@ public class AuthenticationRestController {
         logger.info("POST /user-data request received with data:\n{}",
                 objectMapper.toPrettyJson(request));
 
-        Optional<User> user = authenticationService.getUserData(request);
-        if (user.isPresent()) {
-            return ResponseEntity.ok(user.get());
+        Optional<UserDataResponse> userData = authenticationService.getUserData(request);
+        if (userData.isPresent()) {
+            return ResponseEntity.ok(userData.get());
         }
 
         return ResponseEntity.badRequest().body(ResponseMessage
-                .withMessage("Could not find user, expired or invalid refresh token"));
+                .withMessage("Could not find user, expired or invalid access token"));
     }
 }

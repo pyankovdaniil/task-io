@@ -15,15 +15,14 @@ import microservices.authentication.jwt.TokensGenerationResponse;
 import microservices.authentication.jwt.TokensGenerator;
 import microservices.authentication.user.User;
 import microservices.authentication.user.UserRepository;
-import microservices.authentication.user.UserRole;
 import taskio.common.dto.authentication.authenticate.AuthenticationRequest;
 import taskio.common.dto.authentication.authenticate.AuthenticationResponse;
-import taskio.common.dto.authentication.extractemail.ExtractEmailRequest;
 import taskio.common.dto.authentication.logout.LogoutRequest;
 import taskio.common.dto.authentication.refresh.RefreshRequest;
 import taskio.common.dto.authentication.refresh.RefreshResponse;
 import taskio.common.dto.authentication.register.RegistrationRequest;
 import taskio.common.dto.authentication.userdata.UserDataRequest;
+import taskio.common.dto.authentication.userdata.UserDataResponse;
 import taskio.common.mapping.ObjectMapperWrapper;
 import taskio.common.validation.EmailValidator;
 
@@ -54,7 +53,6 @@ public class AuthenticationRestService {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .fullName(request.getFullName())
-                .role(UserRole.USER)
                 .build();
 
         userRepository.save(user);
@@ -119,7 +117,7 @@ public class AuthenticationRestService {
     }
 
     public boolean logout(LogoutRequest request) {
-        Optional<String> email = jwtService.extractEmailFromToken(request.getRefreshToken());
+        Optional<String> email = jwtService.extractEmailFromToken(request.getAccessToken());
         if (email.isPresent()) {
             Optional<String> savedRefreshToken = Optional.ofNullable(redisTemplate.opsForValue().get(email.get()));
             if (savedRefreshToken.isEmpty()) {
@@ -129,15 +127,15 @@ public class AuthenticationRestService {
             redisTemplate.opsForValue().getAndDelete(email.get());
             logger.info("Successfully deleted resfresh token for user with email:\n{}",
                     email.get());
-            
+
             return true;
         }
 
         return false;
     }
 
-    public Optional<User> getUserData(UserDataRequest request) {
-        Optional<String> email = jwtService.extractEmailFromToken(request.getRefreshToken());
+    public Optional<UserDataResponse> getUserData(UserDataRequest request) {
+        Optional<String> email = jwtService.extractEmailFromToken(request.getAccessToken());
         if (email.isPresent()) {
             Optional<String> savedRefreshToken = Optional.ofNullable(redisTemplate.opsForValue().get(email.get()));
             if (savedRefreshToken.isEmpty()) {
@@ -149,7 +147,10 @@ public class AuthenticationRestService {
                 logger.info("Successfully found this user in database:\n{}",
                         objectMapper.toPrettyJson(user.get()));
 
-                return user;
+                return Optional.of(UserDataResponse.builder()
+                        .email(user.get().getEmail())
+                        .fullName(user.get().getFullName())
+                        .build());
             }
         }
 

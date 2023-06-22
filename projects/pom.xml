@@ -56,10 +56,10 @@
 			<optional>true</optional>
 		</dependency>
 
-		<!-- My Dependencies -->
+		<!-- Commons -->
 		<dependency>
-			<groupId>taskio.microservices</groupId>
-			<artifactId>authentication</artifactId>
+			<groupId>taskio.common</groupId>
+			<artifactId>utils</artifactId>
 			<version>1.0.0</version>
 		</dependency>
 	</dependencies>
