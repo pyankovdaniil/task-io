@@ -5,7 +5,7 @@ metadata:
   labels:
     app: task-io-projects
 spec:
-  replicas: 1
+  replicas: {{ .Values.projects.deployment.replicasCount }}
   selector:
     matchLabels:
       app: task-io-projects
@@ -19,18 +19,18 @@ spec:
           image: pyankovdaniil/task-io-projects
           ports:
             - name: rest
-              containerPort: 8082
+              containerPort: {{ .Values.projects.deployment.ports.restContainerListenPort }}
           env:
             - name: MONGO_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: mongo-secret
-                  key: mongo-user
+                  key: mongouser
             - name: MONGO_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: mongo-secret
-                  key: mongo-password
+                  key: mongopassword
             - name: MONGO_HOST
               valueFrom:
                 configMapKeyRef:
@@ -48,5 +48,5 @@ spec:
   ports:
     - protocol: TCP
       name: rest
-      port: 8082
-      targetPort: 8082
+      port: {{ .Values.projects.service.ports.rest.listenPort }}
+      targetPort: {{ .Values.projects.service.ports.rest.targetPort }}

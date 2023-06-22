@@ -5,7 +5,7 @@ metadata:
   labels:
     app: task-io-authentication
 spec:
-  replicas: 1
+  replicas: {{ .Values.authentication.deployment.replicasCount }}
   selector:
     matchLabels:
       app: task-io-authentication
@@ -19,20 +19,20 @@ spec:
           image: pyankovdaniil/task-io-authentication
           ports:
             - name: rest
-              containerPort: 8080
+              containerPort: {{ .Values.authentication.deployment.ports.restContainerListenPort }}
             - name: grpc
-              containerPort: 8081
+              containerPort: {{ .Values.authentication.deployment.ports.grpcContainerListenPort }}
           env:
             - name: MONGO_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: mongo-secret
-                  key: mongo-user
+                  key: mongouser
             - name: MONGO_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: mongo-secret
-                  key: mongo-password
+                  key: mongopassword
             - name: MONGO_HOST
               valueFrom:
                 configMapKeyRef:
@@ -55,9 +55,9 @@ spec:
   ports:
     - protocol: TCP
       name: rest
-      port: 8080
-      targetPort: 8080
+      port: {{ .Values.authentication.service.ports.rest.listenPort }}
+      targetPort: {{ .Values.authentication.service.ports.rest.targetPort }}
     - protocol: TCP
       name: grpc
-      port: 8081
-      targetPort: 8081
+      port: {{ .Values.authentication.service.ports.grpc.listenPort }}
+      targetPort: {{ .Values.authentication.service.ports.grpc.targetPort }}

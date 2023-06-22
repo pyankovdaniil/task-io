@@ -1,11 +1,11 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: mongo-deployment
+  name: mongo-statefulset
   labels:
     app: task-io-mongo
 spec:
-  replicas: 1
+  replicas: {{ .Values.mongo.statefulset.replicasCount }}
   selector:
     matchLabels:
       app: task-io-mongo
@@ -18,18 +18,26 @@ spec:
         - name: mongodb
           image: mongo:latest
           ports:
-            - containerPort: 27017
+            - containerPort: {{ .Values.mongo.statefulset.ports.containerListenPort }}
           env:
             - name: MONGO_INITDB_ROOT_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: mongo-secret
-                  key: mongo-user
+                  key: mongouser
             - name: MONGO_INITDB_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: mongo-secret
-                  key: mongo-password
+                  key: mongopassword
+  volumeClaimTemplates:
+    - metadata:
+        name: mongo-persistent-storage
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
 ---
 apiVersion: v1
 kind: Service
@@ -40,5 +48,5 @@ spec:
     app: task-io-mongo
   ports:
     - protocol: TCP
-      port: 27017
-      targetPort: 27017
+      port: {{ .Values.mongo.service.ports.listenPort }}
+      targetPort: {{ .Values.mongo.service.ports.targetPort }}

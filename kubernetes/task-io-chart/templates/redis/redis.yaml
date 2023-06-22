@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-statefulset
+  labels:
+    app: task-io-redis
+spec:
+  replicas: {{ .Values.redis.statefulset.replicasCount }}
+  selector:
+    matchLabels:
+      app: task-io-redis
+  template:
+    metadata:
+      labels:
+        app: task-io-redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:latest
+          ports:
+            - containerPort: {{ .Values.redis.statefulset.ports.containerListenPort }}
+  volumeClaimTemplates:
+    - metadata:
+        name: redis-persistent-storage
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: task-io-redis-service
+spec:
+  selector:
+    app: task-io-redis
+  ports:
+    - protocol: TCP
+      port: {{ .Values.redis.service.ports.listenPort }}
+      targetPort: {{ .Values.redis.service.ports.targetPort }}

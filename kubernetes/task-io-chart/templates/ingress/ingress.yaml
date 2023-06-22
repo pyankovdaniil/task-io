@@ -14,11 +14,11 @@ spec:
               service:
                 name: task-io-authentication-service
                 port:
-                  number: 8080
+                  number: {{ .Values.authentication.service.ports.rest.listenPort }}
           - path: /rest/api/v1/projects
             pathType: Prefix
             backend:
               service:
                 name: task-io-projects-service
                 port:
-                  number: 8082
+                  number: {{ .Values.projects.service.ports.rest.listenPort }}
