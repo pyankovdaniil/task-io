@@ -43,6 +43,7 @@ metadata:
   name: task-io-projects-service
 spec:
   type: LoadBalancer
+  externalTrafficPolicy: Local
   selector:
     app: task-io-projects
   ports:

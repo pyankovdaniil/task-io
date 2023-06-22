@@ -50,6 +50,7 @@ metadata:
   name: task-io-authentication-service
 spec:
   type: LoadBalancer
+  externalTrafficPolicy: Local
   selector:
     app: task-io-authentication
   ports:
