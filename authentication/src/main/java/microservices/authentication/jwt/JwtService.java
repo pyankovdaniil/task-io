@@ -15,7 +15,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.Getter;
-import microservices.authentication.user.User;
+import taskio.common.model.authentication.User;
 
 @Component
 public class JwtService {

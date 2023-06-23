@@ -1,4 +1,4 @@
-package microservices.authentication.user;
+package taskio.common.model.authentication;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -10,13 +10,13 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@Document(collection = "user_data")
 @NoArgsConstructor
 @AllArgsConstructor
+@Document(collection = "user_data")
 public class User {
     @Id
     private String id;
     private String email;
     private String password;
-    private String fullName;
+    private String fullName;    
 }

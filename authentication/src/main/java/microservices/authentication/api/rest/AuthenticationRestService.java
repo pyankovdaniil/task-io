@@ -13,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import microservices.authentication.jwt.JwtService;
 import microservices.authentication.jwt.TokensGenerationResponse;
 import microservices.authentication.jwt.TokensGenerator;
-import microservices.authentication.user.User;
 import microservices.authentication.user.UserRepository;
 import taskio.common.dto.authentication.authenticate.AuthenticationRequest;
 import taskio.common.dto.authentication.authenticate.AuthenticationResponse;
@@ -22,8 +21,8 @@ import taskio.common.dto.authentication.refresh.RefreshRequest;
 import taskio.common.dto.authentication.refresh.RefreshResponse;
 import taskio.common.dto.authentication.register.RegistrationRequest;
 import taskio.common.dto.authentication.userdata.UserDataRequest;
-import taskio.common.dto.authentication.userdata.UserDataResponse;
 import taskio.common.mapping.ObjectMapperWrapper;
+import taskio.common.model.authentication.User;
 import taskio.common.validation.EmailValidator;
 
 @Service
@@ -134,7 +133,7 @@ public class AuthenticationRestService {
         return false;
     }
 
-    public Optional<UserDataResponse> getUserData(UserDataRequest request) {
+    public Optional<User> getUserData(UserDataRequest request) {
         Optional<String> email = jwtService.extractEmailFromToken(request.getAccessToken());
         if (email.isPresent()) {
             Optional<String> savedRefreshToken = Optional.ofNullable(redisTemplate.opsForValue().get(email.get()));
@@ -147,10 +146,7 @@ public class AuthenticationRestService {
                 logger.info("Successfully found this user in database:\n{}",
                         objectMapper.toPrettyJson(user.get()));
 
-                return Optional.of(UserDataResponse.builder()
-                        .email(user.get().getEmail())
-                        .fullName(user.get().getFullName())
-                        .build());
+                return user;
             }
         }
 

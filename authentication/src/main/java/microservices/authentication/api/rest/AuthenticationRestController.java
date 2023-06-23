@@ -20,8 +20,8 @@ import taskio.common.dto.authentication.refresh.RefreshRequest;
 import taskio.common.dto.authentication.refresh.RefreshResponse;
 import taskio.common.dto.authentication.register.RegistrationRequest;
 import taskio.common.dto.authentication.userdata.UserDataRequest;
-import taskio.common.dto.authentication.userdata.UserDataResponse;
 import taskio.common.mapping.ObjectMapperWrapper;
+import taskio.common.model.authentication.User;
 
 @RestController
 @RequestMapping("rest/api/v1/auth")
@@ -106,7 +106,7 @@ public class AuthenticationRestController {
         logger.info("POST /user-data request received with data:\n{}",
                 objectMapper.toPrettyJson(request));
 
-        Optional<UserDataResponse> userData = authenticationService.getUserData(request);
+        Optional<User> userData = authenticationService.getUserData(request);
         if (userData.isPresent()) {
             return ResponseEntity.ok(userData.get());
         }

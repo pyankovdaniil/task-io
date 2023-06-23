@@ -3,7 +3,7 @@ package microservices.authentication.jwt;
 import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
-import microservices.authentication.user.User;
+import taskio.common.model.authentication.User;
 
 @Component
 @RequiredArgsConstructor

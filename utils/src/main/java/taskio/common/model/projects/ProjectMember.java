@@ -1,12 +1,14 @@
-package microservices.projects.member;
+package taskio.common.model.projects;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import taskio.common.model.authentication.User;
 
 @Data
 @Builder
@@ -16,7 +18,11 @@ import lombok.NoArgsConstructor;
 public class ProjectMember {
     @Id
     private String id;
-    private String email;
-    private String fullName;
+
+    @DBRef(db = "users")
+    private User user;
     private String role;
+
+    @DBRef
+    private Project project;
 }

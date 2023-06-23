@@ -13,14 +13,14 @@ import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
 import microservices.projects.clients.AuthenticationClient;
-import microservices.projects.member.ProjectMember;
 import microservices.projects.member.ProjectMemberRepository;
-import microservices.projects.project.Project;
 import microservices.projects.project.ProjectRepository;
 import taskio.common.dto.authentication.userdata.UserDataRequest;
-import taskio.common.dto.authentication.userdata.UserDataResponse;
 import taskio.common.dto.projects.create.CreateRequest;
 import taskio.common.mapping.ObjectMapperWrapper;
+import taskio.common.model.authentication.User;
+import taskio.common.model.projects.Project;
+import taskio.common.model.projects.ProjectMember;
 
 @Service
 @RequiredArgsConstructor
@@ -41,13 +41,12 @@ public class ProjectsRestService {
 
             ResponseEntity<?> userDataResponse = authenticationClient.getUserData(userDataRequest);
             if (userDataResponse.getStatusCode().equals(HttpStatusCode.valueOf(HttpStatus.OK.value()))) {
-                if (userDataResponse.getBody() instanceof UserDataResponse userData) {
+                if (userDataResponse.getBody() instanceof User user) {
                     logger.info("Successfully extracted user data:\n{}",
-                            objectMapper.toPrettyJson(userData));
+                            objectMapper.toPrettyJson(user));
 
                     ProjectMember creator = ProjectMember.builder()
-                            .email(userData.getEmail())
-                            .fullName(userData.getFullName())
+                            .user(user)
                             .role("Creator")
                             .build();
 
@@ -58,7 +57,6 @@ public class ProjectsRestService {
                     Project newProject = Project.builder()
                             .name(request.getName())
                             .description(request.getDescription())
-                            .creatorEmail(userData.getEmail())
                             .creationDate(new Date(System.currentTimeMillis()))
                             .members(List.of(creator))
                             .build();
@@ -66,6 +64,9 @@ public class ProjectsRestService {
                     projectRepository.save(newProject);
                     logger.info("Successfully saved project:\n{}",
                             objectMapper.toPrettyJson(newProject));
+
+                    creator.setProject(newProject);
+                    projectMemberRepository.save(creator);
 
                     return true;
                 }

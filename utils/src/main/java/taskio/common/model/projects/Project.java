@@ -1,4 +1,4 @@
-package microservices.projects.project;
+package taskio.common.model.projects;
 
 import java.util.Date;
 import java.util.List;
@@ -11,7 +11,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import microservices.projects.member.ProjectMember;
 
 @Data
 @Builder
@@ -23,7 +22,6 @@ public class Project {
     private String id;
     private String name;
     private String description;
-    private String creatorEmail;
     private Date creationDate;
 
     @DBRef(lazy = true)
