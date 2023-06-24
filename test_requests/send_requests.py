@@ -3,35 +3,39 @@ import sys
 
 baseUrl = ""
 
+USAGE_INFO = "Usage: python3 send_requests.py [hostname].\n" +\
+             "If no args passed - tries to read from file \"server.txt\"\n" +\
+             "Hostname should be \"http(s)://ip:port\""
+def printErrorWithUsageInfo(error_text: str):
+    print("ERROR: " + error_text + "\n\n" + USAGE_INFO + "\n")
+
+
 if len(sys.argv) > 2:
-    print("Wrong number of arguments!\n" +
-           "Usage: python3 send_requests.py [hostname].\n" +
-           "If no args passed - tries to read from file \"server.txt\"\n" +
-           "Hostname should be \"http(s)://ip:port\"\n")
+    printErrorWithUsageInfo("Wrong number of arguments!")
     exit(1)
 
 if len(sys.argv) == 1:
-    print("Reading from file")
+    print("No command line args found. Reading from file.")
     try:
         f = open("server.txt")
     except OSError:
-        print("Can not open the file \"server.txt\"!")
+        printErrorWithUsageInfo("Can not open the file \"server.txt\"!")
         exit(1)
     baseUrl = f.readline().strip()
     f.close()
     if baseUrl == "":
-        print("Empty file!")
+        printErrorWithUsageInfo("Empty file!")
         exit(1)
 
 elif len(sys.argv) == 2:
     print("Found url in args.")
     baseUrl = sys.argv[1]
     if baseUrl == "":
-        print("Empty baseUrl!")
+        printErrorWithUsageInfo("Empty baseUrl!")
         exit(1)
 
 else:
-    print("Cant even imagine how you did get there...")
+    printErrorWithUsageInfo("Cant even imagine how you did get there...")
     exit(1)
 
 print("Got url: \"" + baseUrl + "\"")
