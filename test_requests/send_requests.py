@@ -1,6 +1,44 @@
 import requests
+import sys
 
-response = requests.post("http://192.168.49.2:80/rest/api/v1/auth/register", json={
+baseUrl = ""
+
+if len(sys.argv) > 2:
+    print("Wrong number of arguments!\n" +
+           "Usage: python3 send_requests.py [hostname].\n" +
+           "If no args passed - tries to read from file \"server.txt\"\n" +
+           "Hostname should be \"http(s)://ip:port\"\n")
+    exit(1)
+
+if len(sys.argv) == 1:
+    print("Reading from file")
+    try:
+        f = open("server.txt")
+    except OSError:
+        print("Can not open the file \"server.txt\"!")
+        exit(1)
+    baseUrl = f.readline().strip()
+    f.close()
+    if baseUrl == "":
+        print("Empty file!")
+        exit(1)
+
+elif len(sys.argv) == 2:
+    print("Found url in args.")
+    baseUrl = sys.argv[1]
+    if baseUrl == "":
+        print("Empty baseUrl!")
+        exit(1)
+
+else:
+    print("Cant even imagine how you did get there...")
+    exit(1)
+
+print("Got url: \"" + baseUrl + "\"")
+print("Start testing...\n\n")
+
+
+response = requests.post(baseUrl + "/rest/api/v1/auth/register", json={
     "email": "test@email.com",
     "password": "password",
     "fullName": "Harry Potter"
@@ -8,7 +46,7 @@ response = requests.post("http://192.168.49.2:80/rest/api/v1/auth/register", jso
 
 print(f"Registration request done. Status Code: {response.status_code}, Response: {response.json()}")
 
-response = requests.post("http://192.168.49.2:80/rest/api/v1/auth/authenticate", json={
+response = requests.post(baseUrl + "/rest/api/v1/auth/authenticate", json={
     "email": "test@email.com",
     "password": "password"
 })
@@ -19,7 +57,7 @@ accessToken = response.json().get('accessToken')
 
 headers = {'Authorization': 'Bearer ' + accessToken}
 print(headers)
-response = requests.post("http://192.168.49.2:80/rest/api/v1/projects/create", json={
+response = requests.post(baseUrl + "/rest/api/v1/projects/create", json={
     "name": "task.io",
     "description": "Tool for development in teams"
 }, headers=headers)
