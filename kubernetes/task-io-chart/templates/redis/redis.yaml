@@ -17,6 +17,7 @@ spec:
       containers:
         - name: redis
           image: redis:latest
+          imagePullPolicy: Never
           ports:
             - containerPort: {{ .Values.redis.statefulset.ports.containerListenPort }}
   volumeClaimTemplates:

@@ -16,7 +16,8 @@ spec:
     spec:
       containers:
         - name: task-io-projects
-          image: pyankovdaniil/task-io-projects
+          image: pyankovdaniil/task-io-projects:1.0.0
+          imagePullPolicy: Never
           ports:
             - name: rest
               containerPort: {{ .Values.projects.deployment.ports.restContainerListenPort }}

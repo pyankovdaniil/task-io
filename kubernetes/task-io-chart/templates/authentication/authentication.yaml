@@ -16,7 +16,8 @@ spec:
     spec:
       containers:
         - name: task-io-authentication
-          image: pyankovdaniil/task-io-authentication
+          image: pyankovdaniil/task-io-authentication:1.0.0
+          imagePullPolicy: Never
           ports:
             - name: rest
               containerPort: {{ .Values.authentication.deployment.ports.restContainerListenPort }}

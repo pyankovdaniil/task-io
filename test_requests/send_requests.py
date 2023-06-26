@@ -44,7 +44,7 @@ print("Start testing...\n\n")
 
 response = requests.post(baseUrl + "/rest/api/v1/auth/register", json={
     "email": "test@email.com",
-    "password": "password",
+    "password": "passwordD123A!",
     "fullName": "Harry Potter"
 })
 
@@ -52,7 +52,7 @@ print(f"Registration request done. Status Code: {response.status_code}, Response
 
 response = requests.post(baseUrl + "/rest/api/v1/auth/authenticate", json={
     "email": "test@email.com",
-    "password": "password"
+    "password": "passwordD123A!"
 })
 
 print(f"Authentication request done. Status Code: {response.status_code}, Response: {response.json()}")
@@ -60,8 +60,19 @@ print(f"Authentication request done. Status Code: {response.status_code}, Respon
 accessToken = response.json().get('accessToken')
 
 headers = {'Authorization': 'Bearer ' + accessToken}
+<<<<<<< HEAD
 print(headers)
 response = requests.post(baseUrl + "/rest/api/v1/projects/create", json={
+=======
+response = requests.post("http://192.168.49.2:80/rest/api/v1/projects/create", json={
+    "name": "task.io",
+    "description": "Tool for development in teams"
+}, headers=headers)
+
+print(f"Create project request done. Status Code: {response.status_code}, Response: {response.json()}")
+
+response = requests.post("http://192.168.49.2:80/rest/api/v1/projects/create", json={
+>>>>>>> 2d46eef (Fixed /create endpoint in projects microservice)
     "name": "task.io",
     "description": "Tool for development in teams"
 }, headers=headers)

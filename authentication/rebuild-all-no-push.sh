@@ -5,4 +5,4 @@ minikube image rm docker.io/pyankovdaniil/task-io-authentication:1.0.0
 docker build --tag task-io-authentication:1.0.0 . --force-rm
 docker tag task-io-authentication:1.0.0 pyankovdaniil/task-io-authentication:1.0.0
 docker rmi $(docker images -f "dangling=true" -q)
-docker push pyankovdaniil/task-io-authentication:1.0.0
+

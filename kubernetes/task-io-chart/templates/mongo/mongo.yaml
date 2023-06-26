@@ -17,6 +17,7 @@ spec:
       containers:
         - name: mongodb
           image: mongo:latest
+          imagePullPolicy: Never
           ports:
             - containerPort: {{ .Values.mongo.statefulset.ports.containerListenPort }}
           env:
