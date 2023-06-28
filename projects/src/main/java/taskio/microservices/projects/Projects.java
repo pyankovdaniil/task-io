@@ -12,7 +12,7 @@ import org.springframework.context.annotation.PropertySources;
     "taskio.common",
     "taskio.configs"
 })
-@EnableFeignClients(basePackages = { "microservices.projects.clients" })
+@EnableFeignClients(basePackages = { "taskio.microservices.projects.clients" })
 @PropertySources({
     @PropertySource("classpath:clients-kube.properties")
 })

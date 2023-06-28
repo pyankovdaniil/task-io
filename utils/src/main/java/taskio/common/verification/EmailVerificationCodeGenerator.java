@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class EmailVerificationCodeGenerator {
-    public String generateHexVerificationCode(int length) {
+    public String generateVerificationCode(int length) {
         return RandomStringUtils.random(length, true, true);
     }
 }

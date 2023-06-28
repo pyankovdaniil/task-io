@@ -28,7 +28,7 @@ public class AuthenticationRestController {
     @PostMapping("/register")
     public ResponseMessage register(@Valid @RequestBody RegistrationRequest request) {
         authenticationService.register(request);
-        return ResponseMessage.withMessage("Registration was successful");
+        return ResponseMessage.withMessage("Check your email for verification code!");
     }
 
     @PostMapping("/authenticate")

@@ -13,10 +13,10 @@ import lombok.Getter;
 @Configuration
 @Getter
 public class NotificationConfiguration {
-    @Value("${spring.rabbitmq.exchanges.internal}")
+    @Value("${spring.rabbitmq.exchanges.taskio-internal}")
     private String internalExchange;
 
-    @Value("${spring.rabbitmq.queue.notification}")
+    @Value("${spring.rabbitmq.queue.taskio-notification}")
     private String notificationQueue;
 
     @Value("${spring.rabbitmq.routing-keys.internal-notification}")

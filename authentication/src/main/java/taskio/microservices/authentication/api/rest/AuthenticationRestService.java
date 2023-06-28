@@ -15,6 +15,7 @@ import taskio.common.dto.authentication.authenticate.AuthenticationRequest;
 import taskio.common.dto.authentication.authenticate.AuthenticationResponse;
 import taskio.common.dto.authentication.refresh.RefreshResponse;
 import taskio.common.dto.authentication.register.RegistrationRequest;
+import taskio.common.dto.notification.NotificationRequest;
 import taskio.common.exceptions.user.InvalidTokenException;
 import taskio.common.exceptions.user.PasswordNotMatchException;
 import taskio.common.exceptions.user.UserAlreadyExistException;
@@ -23,6 +24,7 @@ import taskio.common.mapping.ObjectMapperWrapper;
 import taskio.common.model.authentication.User;
 import taskio.common.model.authentication.UserNotVerified;
 import taskio.common.verification.EmailVerificationCodeGenerator;
+import taskio.configs.amqp.RabbitMQMessageProducer;
 import taskio.microservices.authentication.jwt.JwtService;
 import taskio.microservices.authentication.jwt.TokensGenerationResponse;
 import taskio.microservices.authentication.jwt.TokensGenerator;
@@ -40,6 +42,12 @@ public class AuthenticationRestService {
     @Value("${email.verification.verification-code-length}")
     private int emailVerificationCodeLength;
 
+    @Value("${rabbitmq.exchanges.taskio-internal}")
+    private String rabbitExchange;
+
+    @Value("${rabbitmq.routing-keys.internal-notification}")
+    private String rabbitRoutingKey;
+
     private final UserRepository userRepository;
     private final UserNotVerifiedRepository userNotVerifiedRepository;
     private final TokensGenerator tokensGenerator;
@@ -48,6 +56,7 @@ public class AuthenticationRestService {
     private final RedisTemplate<String, String> redisTemplate;
     private final EmailVerificationCodeGenerator emailVerificationCodeGenerator;
     private final ObjectMapperWrapper objectMapper;
+    private final RabbitMQMessageProducer messageProducer;
 
     public void register(RegistrationRequest request) {
         Optional<User> checkEmailUser = userRepository.findUserByEmail(request.getEmail());
@@ -56,13 +65,16 @@ public class AuthenticationRestService {
         }
 
         String emailVerificationCode = emailVerificationCodeGenerator
-                .generateHexVerificationCode(emailVerificationCodeLength).toUpperCase();
+                .generateVerificationCode(emailVerificationCodeLength).toUpperCase();
 
-        // emailSenderService.sendEmail(request.getEmail(),
-        // "Your task.io email verification code!",
-        // "Dear, " + request.getFullName() + "!\nHere is you 6-digit verification code:
-        // " +
-        // emailVerificationCode);
+        NotificationRequest notificationRequest = NotificationRequest.builder()
+                .toEmail(request.getEmail())
+                .subject("Your task.io email verification code!")
+                .text("Dear, " + request.getFullName() + "!\nHere is your 6-digit verification code: "
+                        + emailVerificationCode)
+                .build();
+
+        messageProducer.publish(notificationRequest, rabbitExchange, rabbitRoutingKey);
 
         UserNotVerified user = UserNotVerified.builder()
                 .email(request.getEmail())
@@ -71,7 +83,7 @@ public class AuthenticationRestService {
                 .verificationCode(emailVerificationCode)
                 .build();
 
-        logger.info("Send email verification code {} for user:\n{}",
+        logger.info("Send email verification code {} for saved not verified user:\n{}",
                 emailVerificationCode, objectMapper.toPrettyJson(user));
 
         userNotVerifiedRepository.save(user);
