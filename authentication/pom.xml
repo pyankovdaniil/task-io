@@ -112,10 +112,15 @@
 			<scope>provided</scope>
 		</dependency>
 
-		<!-- Commons -->
+		<!-- Commons & Configs -->
 		<dependency>
 			<groupId>taskio.common</groupId>
 			<artifactId>utils</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>taskio.configs</groupId>
+			<artifactId>amqp</artifactId>
 			<version>1.0.0</version>
 		</dependency>
 	</dependencies>

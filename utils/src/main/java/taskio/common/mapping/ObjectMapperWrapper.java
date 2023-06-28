@@ -1,8 +1,11 @@
 package taskio.common.mapping;
 
+import org.springframework.stereotype.Component;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+@Component
 public class ObjectMapperWrapper {
     private final ObjectMapper objectMapper = new ObjectMapper();
 

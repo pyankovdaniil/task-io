@@ -22,6 +22,16 @@ projects:
       rest:
         listenPort: 8082
         targetPort: 8082
+notification:
+  deployment:
+    replicasCount: 1
+    ports:
+      restContainerListenPort: 8083
+  service:
+    ports:
+      rest:
+        listenPort: 8083
+        targetPort: 8083
 mongo:
   secret:
     values:
@@ -44,3 +54,14 @@ redis:
     ports:
       listenPort: 6379
       targetPort: 6379
+rabbitmq:
+  statefulset:
+    replicasCount: 1
+    ports:
+      amqpContainerListenPort: 5672
+      managementContainerListenPort: 15672
+  service:
+    ports:
+      amqpContainerListenPort: 5672
+      managementContainerListenPort: 15672
+      managementContainerNodePort: 30100
