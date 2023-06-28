@@ -12,7 +12,7 @@
 
 	<groupId>taskio.microservices</groupId>
 	<artifactId>notification</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0</version>
 	<name>Notification Microservice</name>
 	<description>Microservice for email-notifications</description>
 
