@@ -10,7 +10,9 @@ import taskio.common.dto.authentication.authenticate.AuthenticationRequest;
 import taskio.common.dto.authentication.authenticate.AuthenticationResponse;
 import taskio.common.dto.authentication.refresh.RefreshResponse;
 import taskio.common.dto.authentication.register.RegistrationRequest;
+import taskio.common.dto.authentication.verify.EmailVerificationRequest;
 import taskio.common.dto.notification.NotificationRequest;
+import taskio.common.exceptions.mail.InvalidEmailVerificationCodeException;
 import taskio.common.exceptions.user.InvalidTokenException;
 import taskio.common.exceptions.user.PasswordNotMatchException;
 import taskio.common.exceptions.user.UserAlreadyExistException;
@@ -55,10 +57,18 @@ public class AuthenticationRestService implements AuthenticationService {
     private final RabbitMQMessageProducer messageProducer;
     private final CustomCompositeUuidGenerator uuidGenerator;
 
+    @Override
     public void register(RegistrationRequest request) {
         Optional<User> checkEmailUser = userRepository.findUserByEmail(request.getEmail());
         if (checkEmailUser.isPresent()) {
             throw new UserAlreadyExistException("User with this email is already registered");
+        }
+
+        Optional<UserNotVerified> userNotVerifiedCheck = userNotVerifiedRepository
+                .findUserNotVerifiedByEmail(request.getEmail());
+        if (userNotVerifiedCheck.isPresent()) {
+            throw new UserAlreadyExistException("You have already send /register request, now you need" +
+                    " to verify your email!");
         }
 
         String emailVerificationCode = emailVerificationCodeGenerator
@@ -84,6 +94,33 @@ public class AuthenticationRestService implements AuthenticationService {
         userNotVerifiedRepository.save(userNotVerified);
     }
 
+    @Override
+    public void verify(EmailVerificationRequest request) {
+        Optional<UserNotVerified> userNotVerified = userNotVerifiedRepository
+                .findUserNotVerifiedByEmail(request.getEmail());
+
+        if (userNotVerified.isEmpty()) {
+            throw new UserNotFoundException("Verification code on that email was not sent. Please, send" +
+                    " /register request first!");
+        }
+
+        if (!userNotVerified.get().getVerificationCode().equals(request.getEmailVerificationCode())) {
+            throw new InvalidEmailVerificationCodeException("This is incorrect email verification code." +
+                    " Please, check you email again");
+        }
+
+        User user = User.builder()
+                .id(uuidGenerator.generateCustomUuid(User.class.getSimpleName()))
+                .email(request.getEmail())
+                .password(userNotVerified.get().getPassword())
+                .fullName(userNotVerified.get().getFullName())
+                .build();
+
+        userNotVerifiedRepository.delete(userNotVerified.get());
+        userRepository.save(user);
+    }
+
+    @Override
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         Optional<User> userInDatabase = userRepository.findUserByEmail(request.getEmail());
         if (userInDatabase.isEmpty()) {
@@ -104,6 +141,7 @@ public class AuthenticationRestService implements AuthenticationService {
                 .build();
     }
 
+    @Override
     public RefreshResponse refresh(String bearerToken) {
         String email = extractEmailFromToken(bearerToken);
         checkSavedRefreshToken(email);
@@ -117,6 +155,7 @@ public class AuthenticationRestService implements AuthenticationService {
                 .accessToken(jwtService.generateAccessToken(user.get())).build();
     }
 
+    @Override
     public void logout(String bearerToken) {
         String email = extractEmailFromToken(bearerToken);
         Optional<String> savedRefreshToken = Optional.ofNullable(redisTemplate.opsForValue().get(email));
@@ -127,6 +166,7 @@ public class AuthenticationRestService implements AuthenticationService {
         redisTemplate.opsForValue().getAndDelete(email);
     }
 
+    @Override
     public User getUserData(String bearerToken) {
         String email = extractEmailFromToken(bearerToken);
         checkSavedRefreshToken(email);

@@ -13,6 +13,7 @@ import taskio.common.dto.authentication.authenticate.AuthenticationResponse;
 import taskio.common.dto.authentication.message.ResponseMessage;
 import taskio.common.dto.authentication.refresh.RefreshResponse;
 import taskio.common.dto.authentication.register.RegistrationRequest;
+import taskio.common.dto.authentication.verify.EmailVerificationRequest;
 import taskio.common.model.authentication.User;
 
 @RestController
@@ -26,7 +27,15 @@ public class AuthenticationRestController {
     @PostMapping("/register")
     public ResponseMessage register(@Valid @RequestBody RegistrationRequest request) {
         authenticationService.register(request);
-        return ResponseMessage.withMessage("Check your email for verification code!");
+        return ResponseMessage.withMessage("Check your email for verification code! You have 60 seconds to" +
+                " verify you email, after this time you should send /register request again!");
+    }
+
+    @PostMapping("/verify")
+    public ResponseMessage verify(@Valid @RequestBody EmailVerificationRequest request) {
+        authenticationService.verify(request);
+        return ResponseMessage.withMessage("You have successfully verified your email. Now you can /authenticate" +
+                " and get your access and refresh tokens!");
     }
 
     @PostMapping("/authenticate")

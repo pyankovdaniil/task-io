@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import taskio.common.dto.authentication.message.ResponseMessage;
+import taskio.common.exceptions.mail.InvalidEmailVerificationCodeException;
 import taskio.common.exceptions.user.InvalidTokenException;
 import taskio.common.exceptions.user.UserAlreadyExistException;
 import taskio.common.exceptions.user.UserNotFoundException;
@@ -33,6 +34,12 @@ public class AuthenticationRestControllerAdvice {
             errors.put(fieldName, errorMessage);
         });
         return errors;
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(InvalidEmailVerificationCodeException.class)
+    public ResponseMessage handleInvalidEmailVerificationCodeException(InvalidEmailVerificationCodeException exception) {
+        return ResponseMessage.withMessage(exception.getMessage());
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)

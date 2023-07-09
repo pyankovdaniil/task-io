@@ -3,6 +3,7 @@ package taskio.microservices.authentication;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.data.map.repository.config.EnableMapRepositories;
 
 @SpringBootApplication(exclude = {SecurityAutoConfiguration.class}, scanBasePackages = {
         "taskio.microservices.authentication",
