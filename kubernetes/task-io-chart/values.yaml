@@ -1,67 +1,103 @@
 authentication:
+  serverPort: "8080"
+  applicationName: authentication
+  loggingLevels:
+    root: WARN
+    api: INFO
+  headers:
+    authenticationHeaderName: Authorization
+    authenticationHeaderPrefix: Bearer
+  emailVerificationCodeLength: "6"
+  mongo:
+    database: users
+  jwt:
+    secretKey: 3608509d1449f7ef5853989c6a057986054cf8bcdfb6d5f6cfff89ba9260de23
+    accessTokenExpireTimeMs: "180000"
+    refreshTokenExpireTimeMs: "172800000"
   deployment:
-    replicasCount: 1
+    replicasCount: "1"
     ports:
-      restContainerListenPort: 8080
-      grpcContainerListenPort: 8081
+      restContainerListenPort: "8080"
   service:
     ports:
       rest:
-        listenPort: 8080
-        targetPort: 8080
-      grpc:
-        listenPort: 8081
-        targetPort: 8081
+        listenPort: "8080"
+        targetPort: "8080"
 projects:
+  serverPort: "8081"
+  applicationName: projects
+  loggingLevels:
+    root: WARN
+    api: INFO
+  mongo:
+    database: projects
   deployment:
-    replicasCount: 1
+    replicasCount: "1"
     ports:
-      restContainerListenPort: 8082
+      restContainerListenPort: "8081"
   service:
     ports:
       rest:
-        listenPort: 8082
-        targetPort: 8082
+        listenPort: "8081"
+        targetPort: "8081"
 notification:
+  serverPort: "8082"
+  applicationName: notification
+  loggingLevels:
+    root: WARN
+    api: INFO
   deployment:
-    replicasCount: 1
+    replicasCount: "1"
     ports:
-      restContainerListenPort: 8083
+      restContainerListenPort: "8082"
   service:
     ports:
       rest:
-        listenPort: 8083
-        targetPort: 8083
+        listenPort: "8082"
+        targetPort: "8082"
 mongo:
+  url: task-io-mongo-service
+  authenticationDatabase: admin
   secret:
     values:
       mongouser: dXNlcg==
       mongopassword: cGFzc3dvcmQ=
   statefulset:
-    replicasCount: 1
+    replicasCount: "1"
     ports:
-      containerListenPort: 27017
+      containerListenPort: "27017"
   service:
     ports:
-      listenPort: 27017
-      targetPort: 27017
+      listenPort: "27017"
+      targetPort: "27017"
 redis:
+  url: task-io-redis-service
   statefulset:
-    replicasCount: 1
+    replicasCount: "1"
     ports:
-      containerListenPort: 6379
+      containerListenPort: "6379"
   service:
     ports:
-      listenPort: 6379
-      targetPort: 6379
+      listenPort: "6379"
+      targetPort: "6379"
 rabbitmq:
+  secret:
+    values:
+      rabbitmquser: dXNlcg==
+      rabbitmqpassword: cGFzc3dvcmQ=
+  exchanges:
+    internal: internal.exchange
+  queues:
+    notification: notification.queue
+  routingKeys:
+    internalNotification: internal.notification.routing-key
   statefulset:
-    replicasCount: 1
+    replicasCount: "1"
     ports:
-      amqpContainerListenPort: 5672
-      managementContainerListenPort: 15672
+      amqpContainerListenPort: "5672"
+      managementContainerListenPort: "15672"
   service:
     ports:
-      amqpContainerListenPort: 5672
-      managementContainerListenPort: 15672
-      managementContainerNodePort: 30100
+      amqpContainerListenPort: "5672"
+      managementContainerListenPort: "15672"
+      managementContainerNodePort: "30100"

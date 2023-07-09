@@ -22,11 +22,31 @@ spec:
             - name: rest
               containerPort: {{ .Values.notification.deployment.ports.restContainerListenPort }}
           env:
+            - name: NOTIFICATION_SERVER_PORT
+              value: "{{ .Values.notification.serverPort | toString }}"
+            - name: NOTIFICATION_APPLICATION_NAME
+              value: {{ .Values.notification.applicationName }}
+            - name: LOGGING_ROOT_LEVEL
+              value: {{ .Values.notification.loggingLevels.root }}
+            - name: LOGGING_API_LEVEL
+              value: {{ .Values.notification.loggingLevels.api }}
             - name: RABBITMQ_HOST
               valueFrom:
                 configMapKeyRef:
                   name: rabbitmq-config
                   key: rabbitmq-url
+            - name: RABBITMQ_PORT
+              value: "{{ .Values.rabbitmq.service.ports.amqpContainerListenPort | toString }}"
+            - name: RABBITMQ_USER
+              value: {{ .Values.rabbitmq.secret.values.rabbitmquser }}
+            - name: RABBITMQ_PASSWORD
+              value: {{ .Values.rabbitmq.secret.values.rabbitmqpassword }}
+            - name: RABBITMQ_INTERNAL_EXCHANGE
+              value: {{ .Values.rabbitmq.exchanges.internal }}
+            - name: RABBITMQ_NOTIFICATION_QUEUE
+              value: {{ .Values.rabbitmq.queues.notification }}
+            - name: RABBITMQ_INTERNAL_NOTIFICATION_ROUTING_KEY
+              value: {{ .Values.rabbitmq.routingKeys.internalNotification }}
 ---
 apiVersion: v1
 kind: Service

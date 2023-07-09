@@ -6,6 +6,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.NoHandlerFoundException;
 import taskio.common.dto.authentication.message.ResponseMessage;
 import taskio.common.exceptions.user.InvalidTokenException;
 import taskio.common.exceptions.user.UserAlreadyExistException;
@@ -16,6 +17,12 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class AuthenticationRestControllerAdvice {
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(NoHandlerFoundException.class)
+    public ResponseMessage noHandlerFound() {
+        return ResponseMessage.withMessage("Sorry, this path is incorrect, please, check it again :(");
+    }
+
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public Map<String, String> handleValidationExceptions(MethodArgumentNotValidException ex) {

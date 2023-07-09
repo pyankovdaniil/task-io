@@ -1,8 +1,7 @@
 package taskio.microservices.authentication.api.rest;
 
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,9 +15,9 @@ import taskio.common.exceptions.user.InvalidTokenException;
 import taskio.common.exceptions.user.PasswordNotMatchException;
 import taskio.common.exceptions.user.UserAlreadyExistException;
 import taskio.common.exceptions.user.UserNotFoundException;
-import taskio.common.mapping.ObjectMapperWrapper;
 import taskio.common.model.authentication.User;
 import taskio.common.model.authentication.UserNotVerified;
+import taskio.common.uuid.CustomCompositeUuidGenerator;
 import taskio.common.verification.EmailVerificationCodeGenerator;
 import taskio.configs.amqp.RabbitMQMessageProducer;
 import taskio.microservices.authentication.jwt.JwtService;
@@ -32,9 +31,8 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class AuthenticationRestService {
-    private final Logger logger = LoggerFactory.getLogger(AuthenticationRestService.class);
-
+@Slf4j
+public class AuthenticationRestService implements AuthenticationService {
     @Value("${request.auth-header-prefix}")
     private String authHeaderPrefix;
 
@@ -54,8 +52,8 @@ public class AuthenticationRestService {
     private final JwtService jwtService;
     private final RedisTemplate<String, String> redisTemplate;
     private final EmailVerificationCodeGenerator emailVerificationCodeGenerator;
-    private final ObjectMapperWrapper objectMapper;
     private final RabbitMQMessageProducer messageProducer;
+    private final CustomCompositeUuidGenerator uuidGenerator;
 
     public void register(RegistrationRequest request) {
         Optional<User> checkEmailUser = userRepository.findUserByEmail(request.getEmail());
@@ -69,25 +67,21 @@ public class AuthenticationRestService {
         NotificationRequest notificationRequest = NotificationRequest.builder()
                 .toEmail(request.getEmail())
                 .subject("Your task.io email verification code!")
-                .text("Dear, " + request.getFullName() + "!\nHere is your 6-digit verification code: "
+                .text("Dear " + request.getFullName() + ",\nHere is your 6-digit email verification code: "
                         + emailVerificationCode)
                 .build();
 
         messageProducer.publish(notificationRequest, rabbitExchange, rabbitRoutingKey);
 
         UserNotVerified userNotVerified = UserNotVerified.builder()
+                .id(uuidGenerator.generateCustomUuid(UserNotVerified.class.getSimpleName()))
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .fullName(request.getFullName())
                 .verificationCode(emailVerificationCode)
                 .build();
 
-        logger.info("Send email verification code {} for saved not verified userNotVerified:\n{}",
-                emailVerificationCode, objectMapper.toPrettyJson(userNotVerified));
-
         userNotVerifiedRepository.save(userNotVerified);
-
-        logger.info("Successfully saved not verified user:\n{}", objectMapper.toPrettyJson(userNotVerified));
     }
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) {

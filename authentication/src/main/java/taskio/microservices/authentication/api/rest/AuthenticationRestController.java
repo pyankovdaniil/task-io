@@ -21,7 +21,6 @@ import taskio.common.model.authentication.User;
 public class AuthenticationRestController {
     @Value("${request.auth-header-name}")
     private String authenticationHeaderName;
-
     private final AuthenticationRestService authenticationService;
 
     @PostMapping("/register")

@@ -22,6 +22,20 @@ spec:
             - name: rest
               containerPort: {{ .Values.projects.deployment.ports.restContainerListenPort }}
           env:
+            - name: PROJECTS_SERVER_PORT
+              value: "{{ .Values.projects.serverPort | toString }}"
+            - name: PROJECTS_APPLICATION_NAME
+              value: {{ .Values.projects.applicationName }}
+            - name: LOGGING_ROOT_LEVEL
+              value: {{ .Values.projects.loggingLevels.root }}
+            - name: LOGGING_API_LEVEL
+              value: {{ .Values.projects.loggingLevels.api }}
+            - name: MONGO_DATABASE
+              value: {{ .Values.projects.mongo.database }}
+            - name: AUTHENTICATION_HEADER_NAME
+              value: {{ .Values.authentication.headers.authenticationHeaderName }}
+            - name: MONGO_AUTHENTICATION_DATABASE
+              value: {{ .Values.mongo.authenticationDatabase }}
             - name: MONGO_USERNAME
               valueFrom:
                 secretKeyRef:
@@ -37,6 +51,8 @@ spec:
                 configMapKeyRef:
                   name: mongo-config
                   key: mongo-url
+            - name: MONGO_PORT
+              value: "{{ .Values.mongo.service.ports.listenPort | toString }}"
 ---
 apiVersion: v1
 kind: Service

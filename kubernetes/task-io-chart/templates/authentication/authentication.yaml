@@ -21,9 +21,35 @@ spec:
           ports:
             - name: rest
               containerPort: {{ .Values.authentication.deployment.ports.restContainerListenPort }}
-            - name: grpc
-              containerPort: {{ .Values.authentication.deployment.ports.grpcContainerListenPort }}
           env:
+            - name: AUTHENTICATION_SERVER_PORT
+              value: "{{ .Values.authentication.serverPort | toString }}"
+            - name: AUTHENTICATION_APPLICATION_NAME
+              value: {{ .Values.authentication.applicationName }}
+            - name: LOGGING_ROOT_LEVEL
+              value: {{ .Values.authentication.loggingLevels.root }}
+            - name: LOGGING_API_LEVEL
+              value: {{ .Values.authentication.loggingLevels.api }}
+            - name: AUTHENTICATION_HEADER_NAME
+              value: {{ .Values.authentication.headers.authenticationHeaderName }}
+            - name: AUTHENTICATION_HEADER_PREFIX
+              value: {{ .Values.authentication.headers.authenticationHeaderPrefix }}
+            - name: EMAIL_VERIFICATION_CODE_LENGTH
+              value: "{{ .Values.authentication.emailVerificationCodeLength | toString }}"
+            - name: MONGO_AUTHENTICATION_DATABASE
+              value: {{ .Values.mongo.authenticationDatabase }}
+            - name: MONGO_DATABASE
+              value: {{ .Values.authentication.mongo.database }}
+            - name: JWT_SECRET_KEY
+              value: {{ .Values.authentication.jwt.secretKey }}
+            - name: JWT_ACCESS_TOKEN_EXPIRE_TIME_MS
+              value: "{{ .Values.authentication.jwt.accessTokenExpireTimeMs | toString }}"
+            - name: JWT_REFRESH_TOKEN_EXPIRE_TIME_MS
+              value: "{{ .Values.authentication.jwt.refreshTokenExpireTimeMs | toString }}"
+            - name: RABBITMQ_INTERNAL_EXCHANGE
+              value: {{ .Values.rabbitmq.exchanges.internal }}
+            - name: RABBITMQ_INTERNAL_NOTIFICATION_ROUTING_KEY
+              value: {{ .Values.rabbitmq.routingKeys.internalNotification }}
             - name: MONGO_USERNAME
               valueFrom:
                 secretKeyRef:
@@ -39,11 +65,15 @@ spec:
                 configMapKeyRef:
                   name: mongo-config
                   key: mongo-url
+            - name: MONGO_PORT
+              value: "{{ .Values.mongo.service.ports.listenPort | toString }}"
             - name: REDIS_HOST
               valueFrom:
                 configMapKeyRef:
                   name: redis-config
                   key: redis-url
+            - name: REDIS_PORT
+              value: "{{ .Values.redis.service.ports.listenPort | toString }}"
 ---
 apiVersion: v1
 kind: Service
@@ -59,7 +89,3 @@ spec:
       name: rest
       port: {{ .Values.authentication.service.ports.rest.listenPort }}
       targetPort: {{ .Values.authentication.service.ports.rest.targetPort }}
-    - protocol: TCP
-      name: grpc
-      port: {{ .Values.authentication.service.ports.grpc.listenPort }}
-      targetPort: {{ .Values.authentication.service.ports.grpc.targetPort }}

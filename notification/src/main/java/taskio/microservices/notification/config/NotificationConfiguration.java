@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @Getter
 public class NotificationConfiguration {
-    @Value("${spring.rabbitmq.exchanges.internal}")
+    @Value("${spring.rabbitmq.exchanges.taskio-internal}")
     private String internalExchange;
 
     @Value("${spring.rabbitmq.queue.notification}")
