@@ -1,16 +1,12 @@
 package taskio.microservices.authentication.api.rest;
 
-import java.time.Duration;
-import java.util.Optional;
-
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import lombok.RequiredArgsConstructor;
 import taskio.common.dto.authentication.authenticate.AuthenticationRequest;
 import taskio.common.dto.authentication.authenticate.AuthenticationResponse;
 import taskio.common.dto.authentication.refresh.RefreshResponse;
@@ -30,6 +26,9 @@ import taskio.microservices.authentication.jwt.TokensGenerationResponse;
 import taskio.microservices.authentication.jwt.TokensGenerator;
 import taskio.microservices.authentication.user.UserNotVerifiedRepository;
 import taskio.microservices.authentication.user.UserRepository;
+
+import java.time.Duration;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -61,7 +60,7 @@ public class AuthenticationRestService {
     public void register(RegistrationRequest request) {
         Optional<User> checkEmailUser = userRepository.findUserByEmail(request.getEmail());
         if (checkEmailUser.isPresent()) {
-            throw new UserAlreadyExistException("User with this email is alreay registered");
+            throw new UserAlreadyExistException("User with this email is already registered");
         }
 
         String emailVerificationCode = emailVerificationCodeGenerator
@@ -76,18 +75,19 @@ public class AuthenticationRestService {
 
         messageProducer.publish(notificationRequest, rabbitExchange, rabbitRoutingKey);
 
-        UserNotVerified user = UserNotVerified.builder()
+        UserNotVerified userNotVerified = UserNotVerified.builder()
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .fullName(request.getFullName())
                 .verificationCode(emailVerificationCode)
                 .build();
 
-        logger.info("Send email verification code {} for saved not verified user:\n{}",
-                emailVerificationCode, objectMapper.toPrettyJson(user));
+        logger.info("Send email verification code {} for saved not verified userNotVerified:\n{}",
+                emailVerificationCode, objectMapper.toPrettyJson(userNotVerified));
 
-        userNotVerifiedRepository.save(user);
+        userNotVerifiedRepository.save(userNotVerified);
 
+        logger.info("Successfully saved not verified user:\n{}", objectMapper.toPrettyJson(userNotVerified));
     }
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
@@ -111,62 +111,55 @@ public class AuthenticationRestService {
     }
 
     public RefreshResponse refresh(String bearerToken) {
-        Optional<String> email = jwtService.extractEmailFromToken(bearerToken
-                .substring(authHeaderPrefix.length() + 1));
+        String email = extractEmailFromToken(bearerToken);
+        checkSavedRefreshToken(email);
 
-        if (email.isEmpty()) {
-            throw new InvalidTokenException("Invalid or expired access token, can not extract user");
-        }
-
-        Optional<String> savedRefreshToken = Optional.ofNullable(redisTemplate.opsForValue().get(email.get()));
-        if (savedRefreshToken.isEmpty()) {
-            throw new InvalidTokenException("Can not find your refresh token, please authenticate again");
-        }
-
-        Optional<User> user = userRepository.findUserByEmail(email.get());
+        Optional<User> user = userRepository.findUserByEmail(email);
         if (user.isEmpty()) {
             throw new UserNotFoundException("User with this email is not in database");
         }
 
         return RefreshResponse.builder()
                 .accessToken(jwtService.generateAccessToken(user.get())).build();
-
     }
 
     public void logout(String bearerToken) {
-        Optional<String> email = jwtService.extractEmailFromToken(bearerToken
-                .substring(authHeaderPrefix.length() + 1));
-
-        if (email.isEmpty()) {
-            throw new InvalidTokenException("Invalid or expired access token, can not extract user");
-        }
-
-        Optional<String> savedRefreshToken = Optional.ofNullable(redisTemplate.opsForValue().get(email.get()));
+        String email = extractEmailFromToken(bearerToken);
+        Optional<String> savedRefreshToken = Optional.ofNullable(redisTemplate.opsForValue().get(email));
         if (savedRefreshToken.isEmpty()) {
             throw new InvalidTokenException("You are already logged out");
         }
 
-        redisTemplate.opsForValue().getAndDelete(email.get());
+        redisTemplate.opsForValue().getAndDelete(email);
     }
 
     public User getUserData(String bearerToken) {
-        Optional<String> email = jwtService.extractEmailFromToken(bearerToken
-                .substring(authHeaderPrefix.length() + 1));
+        String email = extractEmailFromToken(bearerToken);
+        checkSavedRefreshToken(email);
 
-        if (email.isEmpty()) {
-            throw new InvalidTokenException("Invalid or expired access token, can not extract user");
-        }
-
-        Optional<String> savedRefreshToken = Optional.ofNullable(redisTemplate.opsForValue().get(email.get()));
-        if (savedRefreshToken.isEmpty()) {
-            throw new InvalidTokenException("Can not find your refresh token, please authenticate again");
-        }
-
-        Optional<User> user = userRepository.findUserByEmail(email.get());
+        Optional<User> user = userRepository.findUserByEmail(email);
         if (user.isEmpty()) {
             throw new UserNotFoundException("User with this email is not in database");
         }
 
         return user.get();
+    }
+
+    private String extractEmailFromToken(String bearerToken) {
+        Optional<String> email = jwtService.extractEmailFromToken(bearerToken
+                .substring(authHeaderPrefix.length() + 1));
+
+        if (email.isEmpty()) {
+            throw new InvalidTokenException("Invalid or expired access token, can not extract user");
+        }
+
+        return email.get();
+    }
+
+    private void checkSavedRefreshToken(String email) {
+        Optional<String> savedRefreshToken = Optional.ofNullable(redisTemplate.opsForValue().get(email));
+        if (savedRefreshToken.isEmpty()) {
+            throw new InvalidTokenException("Can not find your refresh token, please authenticate again");
+        }
     }
 }

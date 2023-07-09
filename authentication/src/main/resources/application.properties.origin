@@ -2,15 +2,9 @@
 server.port=8080
 spring.application.name=authentication
 
-# spring security
-spring.security.enabled=false
-
-#grpc server parameters
-grpc.server.port=8081
-
 # logging parameters
 logging.level.root=WARN
-logging.level.microservices.authentication.api=INFO
+logging.level.taskio.microservices.authentication.api=INFO
 logging.file.name=src/main/resources/logs/authentication_logs.log
 
 # mongodb
@@ -22,8 +16,8 @@ spring.data.mongodb.username=${MONGO_USERNAME}
 spring.data.mongodb.password=${MONGO_PASSWORD}
 
 # redis
-spring.redis.host=${REDIS_HOST}
-spring.redis.port=6379
+spring.data.redis.host=${REDIS_HOST}
+spring.data.redis.port=6379
 
 # jwt parameters
 jwt.secret-key=

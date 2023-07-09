@@ -4,7 +4,7 @@ spring.application.name=projects
 
 # logging parameters
 logging.level.root=WARN
-logging.level.microservices.projects.api=INFO
+logging.level.taskio.microservices.projects.api=INFO
 logging.file.name=src/main/resources/logs/projects_logs.log
 
 # headers

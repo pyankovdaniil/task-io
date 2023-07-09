@@ -1,21 +1,20 @@
 package taskio.microservices.authentication.jwt;
 
-import java.security.Key;
-import java.util.Date;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
-
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.Getter;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 import taskio.common.model.authentication.User;
+
+import java.security.Key;
+import java.util.Date;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 
 @Component
 public class JwtService {

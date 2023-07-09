@@ -7,7 +7,7 @@ email.verification.verification-code-length=6
 spring.mail.host=smtp.gmail.com
 spring.mail.port=587
 spring.mail.username=pyankovdaniil5@gmail.com
-spring.mail.password=bfimfiawcggoaiho
+spring.mail.password=
 spring.mail.properties.mail.smtp.auth=true
 spring.mail.properties.mail.smtp.starttls.enable=true
 
@@ -17,5 +17,5 @@ request.auth-header-prefix=Bearer
 
 # logging parameters
 logging.level.root=WARN
-logging.level.microservices.notification.api=INFO
+logging.level.taskio.microservices.notification.api=INFO
 logging.file.name=src/main/resources/logs/notification_logs.log

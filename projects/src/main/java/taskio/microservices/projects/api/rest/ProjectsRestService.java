@@ -1,12 +1,8 @@
 package taskio.microservices.projects.api.rest;
 
-import java.util.Date;
-import java.util.List;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 import taskio.common.dto.projects.create.CreateRequest;
 import taskio.common.exceptions.user.UserAlreadyCreatedProjectException;
 import taskio.common.exceptions.user.UserNotFoundException;
@@ -17,15 +13,15 @@ import taskio.microservices.projects.clients.AuthenticationClient;
 import taskio.microservices.projects.project.ProjectMemberRepository;
 import taskio.microservices.projects.project.ProjectRepository;
 
+import java.util.Date;
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class ProjectsRestService {
     private final AuthenticationClient authenticationClient;
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
-
-    @Value("${request.auth-header-prefix}")
-    private String authHeaderPrefix;
 
     public void create(CreateRequest request, String bearerToken) {
         User user = getUserData(bearerToken);
@@ -61,8 +57,7 @@ public class ProjectsRestService {
 
     private User getUserData(String bearerToken) {
         try {
-            User user = authenticationClient.getUserData(bearerToken);
-            return user;
+            return authenticationClient.getUserData(bearerToken);
         } catch (FeignException exception) {
             throw new UserNotFoundException("Invalid or expired access token");
         }

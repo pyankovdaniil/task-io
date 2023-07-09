@@ -15,6 +15,8 @@ public class AuthenticationRequest {
     @Email(message = "Please, type the correct email")
     private String email;
 
-    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$", message = "Password should have minimum eight characters, at least one uppercase letter, one lowercase letter, one number and one special character (@$!%*?&)")
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
+            message = "Password should have minimum eight characters, at least one uppercase letter, " +
+                    "one lowercase letter, one number and one special character (@$!%*?&)")
     private String password;
 }

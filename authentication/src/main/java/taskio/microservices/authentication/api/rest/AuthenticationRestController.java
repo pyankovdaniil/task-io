@@ -1,14 +1,13 @@
 package taskio.microservices.authentication.api.rest;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import taskio.common.dto.authentication.authenticate.AuthenticationRequest;
 import taskio.common.dto.authentication.authenticate.AuthenticationResponse;
 import taskio.common.dto.authentication.message.ResponseMessage;
@@ -33,15 +32,13 @@ public class AuthenticationRestController {
 
     @PostMapping("/authenticate")
     public AuthenticationResponse authenticate(@Valid @RequestBody AuthenticationRequest request) {
-        AuthenticationResponse tokens = authenticationService.authenticate(request);
-        return tokens;
+        return authenticationService.authenticate(request);
     }
 
     @PostMapping("/refresh")
     public RefreshResponse refresh(HttpServletRequest servletRequest) {
         String bearerToken = servletRequest.getHeader(authenticationHeaderName);
-        RefreshResponse tokens = authenticationService.refresh(bearerToken);
-        return tokens;
+        return authenticationService.refresh(bearerToken);
     }
 
     @PostMapping("/logout")
@@ -54,7 +51,6 @@ public class AuthenticationRestController {
     @PostMapping("/user-data")
     public User userData(HttpServletRequest servletRequest) {
         String bearerToken = servletRequest.getHeader(authenticationHeaderName);
-        User userData = authenticationService.getUserData(bearerToken);
-        return userData;
+        return authenticationService.getUserData(bearerToken);
     }
 }

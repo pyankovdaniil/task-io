@@ -1,17 +1,16 @@
 package taskio.microservices.projects.config;
 
-import java.util.Collections;
-
+import com.mongodb.MongoClientSettings;
+import com.mongodb.MongoCredential;
+import com.mongodb.ServerAddress;
+import com.mongodb.client.MongoClients;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.core.MongoClientFactoryBean;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
-import com.mongodb.MongoClientSettings;
-import com.mongodb.MongoCredential;
-import com.mongodb.ServerAddress;
-import com.mongodb.client.MongoClients;
+import java.util.Collections;
 
 @Configuration
 public class MongoConfig {
@@ -39,7 +38,7 @@ public class MongoConfig {
         mongo.setHost(host);
         mongo.setPort(port);
 
-        mongo.setCredential(new MongoCredential[] {
+        mongo.setCredential(new MongoCredential[]{
                 MongoCredential.createCredential(username, authenticationDatabase, password.toCharArray())
         });
 
@@ -47,7 +46,7 @@ public class MongoConfig {
     }
 
     @Bean
-    public MongoTemplate mongoTemplate() throws Exception {
+    public MongoTemplate mongoTemplate() {
         MongoClientSettings settings = MongoClientSettings.builder()
                 .applyToClusterSettings(
                         builder -> builder.hosts(Collections.singletonList(new ServerAddress(host, port))))

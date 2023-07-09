@@ -7,14 +7,14 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.annotation.PropertySources;
 
-@SpringBootApplication(exclude = { SecurityAutoConfiguration.class }, scanBasePackages = {
-    "taskio.microservices.projects",
-    "taskio.common",
-    "taskio.configs"
+@SpringBootApplication(exclude = {SecurityAutoConfiguration.class}, scanBasePackages = {
+        "taskio.microservices.projects",
+        "taskio.common",
+        "taskio.configs"
 })
-@EnableFeignClients(basePackages = { "taskio.microservices.projects.clients" })
+@EnableFeignClients(basePackages = {"taskio.microservices.projects.clients"})
 @PropertySources({
-    @PropertySource("classpath:clients-kube.properties")
+        @PropertySource("classpath:clients-kube.properties")
 })
 public class Projects {
     public static void main(String[] args) {

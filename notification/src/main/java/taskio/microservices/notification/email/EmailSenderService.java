@@ -1,13 +1,12 @@
 package taskio.microservices.notification.email;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.stereotype.Service;
-
 import jakarta.mail.Message;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.stereotype.Service;
 import taskio.common.exceptions.mail.CanNotSendEmailException;
 
 @Service
@@ -26,8 +25,8 @@ public class EmailSenderService {
             mimeMessage.setSubject(subject);
             mimeMessage.setText(body);
             mailSender.send(mimeMessage);
-        } catch (Exception ignored) {
-            throw new CanNotSendEmailException(ignored.getMessage());
+        } catch (Exception exception) {
+            throw new CanNotSendEmailException(exception.getMessage());
         }
     }
 }
