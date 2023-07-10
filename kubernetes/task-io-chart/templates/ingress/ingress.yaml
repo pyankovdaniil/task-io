@@ -8,14 +8,14 @@ spec:
   rules:
     - http:
         paths:
-          - path: /rest/api/v1/auth
+          - path: /api/rest/v1/auth
             pathType: Prefix
             backend:
               service:
                 name: task-io-authentication-service
                 port:
                   number: {{ .Values.authentication.service.ports.rest.listenPort }}
-          - path: /rest/api/v1/projects
+          - path: /api/rest/v1/projects
             pathType: Prefix
             backend:
               service:

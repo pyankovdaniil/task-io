@@ -14,4 +14,5 @@ public interface AuthenticationService {
     void logout(String bearerToken);
     User getUserData(String bearerToken);
     void verify(EmailVerificationRequest request);
+    User getUserDataFromEmail(String email);
 }

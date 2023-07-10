@@ -10,6 +10,7 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 import taskio.common.dto.authentication.message.ResponseMessage;
 import taskio.common.exceptions.mail.InvalidEmailVerificationCodeException;
 import taskio.common.exceptions.user.InvalidTokenException;
+import taskio.common.exceptions.user.PasswordNotMatchException;
 import taskio.common.exceptions.user.UserAlreadyExistException;
 import taskio.common.exceptions.user.UserNotFoundException;
 
@@ -45,6 +46,12 @@ public class AuthenticationRestControllerAdvice {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(UserAlreadyExistException.class)
     public ResponseMessage handleUserAlreadyExist(UserAlreadyExistException exception) {
+        return ResponseMessage.withMessage(exception.getMessage());
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(PasswordNotMatchException.class)
+    public ResponseMessage handlePasswordNotMatchException(PasswordNotMatchException exception) {
         return ResponseMessage.withMessage(exception.getMessage());
     }
 

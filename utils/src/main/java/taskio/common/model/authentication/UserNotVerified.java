@@ -1,12 +1,14 @@
 package taskio.common.model.authentication;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.util.Date;
 
 @Data
 @Builder
@@ -19,5 +21,8 @@ public class UserNotVerified {
     private String email;
     private String password;
     private String fullName;
-    private String verificationCode;    
+    private String verificationCode;
+
+    @Indexed(name = "createdAtIndex", expireAfterSeconds = 60)
+    private Date createdAt;
 }

@@ -10,12 +10,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import taskio.common.dto.authentication.message.ResponseMessage;
 import taskio.common.dto.projects.create.CreateRequest;
+import taskio.common.dto.projects.invite.InviteRequest;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/rest/api/v1/projects")
+@RequestMapping("/api/rest/v1/projects")
 public class ProjectsRestController {
-    private final ProjectsRestService projectsService;
+    private final ProjectsService projectsService;
 
     @Value("${request.auth-header-name}")
     private String authenticationHeaderName;
@@ -28,7 +29,9 @@ public class ProjectsRestController {
     }
 
     @PostMapping("/invite")
-    public ResponseMessage invite() {
-        return ResponseMessage.withMessage("Can not invite to a project...");
+    public ResponseMessage invite(HttpServletRequest servletRequest, @Valid @RequestBody InviteRequest request) {
+        String bearerTokenHeader = servletRequest.getHeader(authenticationHeaderName);
+        projectsService.invite(request, bearerTokenHeader);
+        return ResponseMessage.withMessage("Successfully invited " + request.getInvitedPersonEmail() + "!");
     }
 }

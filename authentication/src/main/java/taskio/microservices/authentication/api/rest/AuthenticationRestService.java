@@ -29,6 +29,7 @@ import taskio.microservices.authentication.user.UserNotVerifiedRepository;
 import taskio.microservices.authentication.user.UserRepository;
 
 import java.time.Duration;
+import java.util.Date;
 import java.util.Optional;
 
 @Service
@@ -74,6 +75,8 @@ public class AuthenticationRestService implements AuthenticationService {
         String emailVerificationCode = emailVerificationCodeGenerator
                 .generateVerificationCode(emailVerificationCodeLength).toUpperCase();
 
+        log.info("Created email verification code: {}", emailVerificationCode);
+
         NotificationRequest notificationRequest = NotificationRequest.builder()
                 .toEmail(request.getEmail())
                 .subject("Your task.io email verification code!")
@@ -89,6 +92,7 @@ public class AuthenticationRestService implements AuthenticationService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .fullName(request.getFullName())
                 .verificationCode(emailVerificationCode)
+                .createdAt(new Date(System.currentTimeMillis()))
                 .build();
 
         userNotVerifiedRepository.save(userNotVerified);
@@ -171,17 +175,18 @@ public class AuthenticationRestService implements AuthenticationService {
         String email = extractEmailFromToken(bearerToken);
         checkSavedRefreshToken(email);
 
-        Optional<User> user = userRepository.findUserByEmail(email);
-        if (user.isEmpty()) {
-            throw new UserNotFoundException("User with this email is not in database");
-        }
+        return getUserFromRepository(email);
+    }
 
-        return user.get();
+    @Override
+    public User getUserDataFromEmail(String email) {
+        return getUserFromRepository(email);
     }
 
     private String extractEmailFromToken(String bearerToken) {
-        Optional<String> email = jwtService.extractEmailFromToken(bearerToken
-                .substring(authHeaderPrefix.length() + 1));
+        String refreshToken = bearerToken.substring(authHeaderPrefix.length() + 1);
+
+        Optional<String> email = jwtService.extractEmailFromToken(refreshToken);
 
         if (email.isEmpty()) {
             throw new InvalidTokenException("Invalid or expired access token, can not extract user");
@@ -195,5 +200,14 @@ public class AuthenticationRestService implements AuthenticationService {
         if (savedRefreshToken.isEmpty()) {
             throw new InvalidTokenException("Can not find your refresh token, please authenticate again");
         }
+    }
+
+    private User getUserFromRepository(String email) {
+        Optional<User> user = userRepository.findUserByEmail(email);
+        if (user.isEmpty()) {
+            throw new UserNotFoundException("User with this email is not in database");
+        }
+
+        return user.get();
     }
 }

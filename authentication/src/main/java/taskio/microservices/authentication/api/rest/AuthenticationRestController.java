@@ -13,11 +13,12 @@ import taskio.common.dto.authentication.authenticate.AuthenticationResponse;
 import taskio.common.dto.authentication.message.ResponseMessage;
 import taskio.common.dto.authentication.refresh.RefreshResponse;
 import taskio.common.dto.authentication.register.RegistrationRequest;
+import taskio.common.dto.authentication.userdata.UserDataFromEmailRequest;
 import taskio.common.dto.authentication.verify.EmailVerificationRequest;
 import taskio.common.model.authentication.User;
 
 @RestController
-@RequestMapping("rest/api/v1/auth")
+@RequestMapping("api/rest/v1/auth")
 @RequiredArgsConstructor
 public class AuthenticationRestController {
     @Value("${request.auth-header-name}")
@@ -57,8 +58,13 @@ public class AuthenticationRestController {
     }
 
     @PostMapping("/user-data")
-    public User userData(HttpServletRequest servletRequest) {
+    public User getUserData(HttpServletRequest servletRequest) {
         String bearerToken = servletRequest.getHeader(authenticationHeaderName);
         return authenticationService.getUserData(bearerToken);
+    }
+
+    @PostMapping("/user-data-from-email")
+    public User getUserData(@Valid @RequestBody UserDataFromEmailRequest request) {
+        return authenticationService.getUserDataFromEmail(request.getEmail());
     }
 }

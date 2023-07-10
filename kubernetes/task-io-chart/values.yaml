@@ -12,7 +12,7 @@ authentication:
     database: users
   jwt:
     secretKey: 3608509d1449f7ef5853989c6a057986054cf8bcdfb6d5f6cfff89ba9260de23
-    accessTokenExpireTimeMs: "180000"
+    accessTokenExpireTimeMs: "900000"
     refreshTokenExpireTimeMs: "172800000"
   deployment:
     replicasCount: "1"

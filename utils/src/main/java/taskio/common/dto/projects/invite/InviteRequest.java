@@ -1,5 +1,6 @@
-package taskio.common.dto.projects.create;
+package taskio.common.dto.projects.invite;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,12 +9,12 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
-public class CreateRequest {
+@AllArgsConstructor
+public class InviteRequest {
     @NotBlank(message = "Project name should not be blank")
     private String projectName;
 
-    @NotBlank(message = "Project description should not be blank")
-    private String projectDescription;
+    @Email(message = "Please, type the correct email")
+    private String invitedPersonEmail;
 }
