@@ -30,8 +30,6 @@ spec:
               value: {{ .Values.authentication.loggingLevels.root }}
             - name: LOGGING_API_LEVEL
               value: {{ .Values.authentication.loggingLevels.api }}
-            - name: AUTHENTICATION_HEADER_NAME
-              value: {{ .Values.authentication.headers.authenticationHeaderName }}
             - name: AUTHENTICATION_HEADER_PREFIX
               value: {{ .Values.authentication.headers.authenticationHeaderPrefix }}
             - name: EMAIL_VERIFICATION_CODE_LENGTH

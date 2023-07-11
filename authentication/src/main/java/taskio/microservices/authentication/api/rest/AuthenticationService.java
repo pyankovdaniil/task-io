@@ -13,6 +13,6 @@ public interface AuthenticationService {
     RefreshResponse refresh(String bearerToken);
     void logout(String bearerToken);
     User getUserData(String bearerToken);
-    void verify(EmailVerificationRequest request);
+    void verifyEmail(EmailVerificationRequest request);
     User getUserDataFromEmail(String email);
 }

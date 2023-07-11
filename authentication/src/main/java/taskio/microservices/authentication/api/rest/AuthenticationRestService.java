@@ -20,7 +20,7 @@ import taskio.common.exceptions.user.UserNotFoundException;
 import taskio.common.model.authentication.User;
 import taskio.common.model.authentication.UserNotVerified;
 import taskio.common.uuid.CustomCompositeUuidGenerator;
-import taskio.common.verification.EmailVerificationCodeGenerator;
+import taskio.common.verification.VerificationCodeGenerator;
 import taskio.configs.amqp.RabbitMQMessageProducer;
 import taskio.microservices.authentication.jwt.JwtService;
 import taskio.microservices.authentication.jwt.TokensGenerationResponse;
@@ -54,7 +54,7 @@ public class AuthenticationRestService implements AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final RedisTemplate<String, String> redisTemplate;
-    private final EmailVerificationCodeGenerator emailVerificationCodeGenerator;
+    private final VerificationCodeGenerator verificationCodeGenerator;
     private final RabbitMQMessageProducer messageProducer;
     private final CustomCompositeUuidGenerator uuidGenerator;
 
@@ -72,7 +72,7 @@ public class AuthenticationRestService implements AuthenticationService {
                     " to verify your email!");
         }
 
-        String emailVerificationCode = emailVerificationCodeGenerator
+        String emailVerificationCode = verificationCodeGenerator
                 .generateVerificationCode(emailVerificationCodeLength).toUpperCase();
 
         log.info("Created email verification code: {}", emailVerificationCode);
@@ -99,7 +99,7 @@ public class AuthenticationRestService implements AuthenticationService {
     }
 
     @Override
-    public void verify(EmailVerificationRequest request) {
+    public void verifyEmail(EmailVerificationRequest request) {
         Optional<UserNotVerified> userNotVerified = userNotVerifiedRepository
                 .findUserNotVerifiedByEmail(request.getEmail());
 

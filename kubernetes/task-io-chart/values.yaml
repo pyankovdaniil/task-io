@@ -5,7 +5,6 @@ authentication:
     root: WARN
     api: INFO
   headers:
-    authenticationHeaderName: Authorization
     authenticationHeaderPrefix: Bearer
   emailVerificationCodeLength: "6"
   mongo:
@@ -19,6 +18,7 @@ authentication:
     ports:
       restContainerListenPort: "8080"
   service:
+    name: task-io-authentication-service
     ports:
       rest:
         listenPort: "8080"
@@ -29,6 +29,7 @@ projects:
   loggingLevels:
     root: WARN
     api: INFO
+  confirmInviteVerificationCodeLength: "8"
   mongo:
     database: projects
   deployment:
