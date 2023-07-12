@@ -28,6 +28,6 @@ public class ProjectMemberNotVerified {
     @DBRef
     private Project project;
 
-    @Indexed(name = "createdAtIndex", expireAfterSeconds = 60)
+    @Indexed(name = "projectMemberNotVerifiedCreatedAtIndex", expireAfterSeconds = 60, unique = true)
     private Date createdAt;
 }

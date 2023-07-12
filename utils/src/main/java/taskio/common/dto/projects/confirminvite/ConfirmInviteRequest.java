@@ -20,6 +20,6 @@ public class ConfirmInviteRequest {
             "capital letter and number. Length should be 8 characters")
     private String inviteConfirmationCode;
 
-    @NotBlank(message = "Project name should not be blank")
-    private String projectName;
+    @NotBlank(message = "Project identifier should not be blank")
+    private String projectIdentifier;
 }

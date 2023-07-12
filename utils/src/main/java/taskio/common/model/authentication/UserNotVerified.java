@@ -23,6 +23,6 @@ public class UserNotVerified {
     private String fullName;
     private String verificationCode;
 
-    @Indexed(name = "createdAtIndex", expireAfterSeconds = 60)
+    @Indexed(name = "userNotVerifiedCreatedAtIndex", expireAfterSeconds = 60, unique = true)
     private Date createdAt;
 }

@@ -23,7 +23,8 @@ public class AuthenticationRestController {
     public ResponseMessage register(@Valid @RequestBody RegistrationRequest request) {
         authenticationService.register(request);
         return ResponseMessage.withMessage("Check your email for verification code! You have 60 seconds to" +
-                " verify you email, after this time you should send /register request again!");
+                " verify you email, after this time your code will be deleted and you" +
+                " should send /register request again!");
     }
 
     @PostMapping("/verify-email")

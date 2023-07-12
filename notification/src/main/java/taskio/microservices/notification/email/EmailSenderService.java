@@ -32,7 +32,7 @@ public class EmailSenderService {
             throw CanNotSendEmailException.builder()
                     .errorDate(new Date(System.currentTimeMillis()))
                     .errorMessage(exception.getMessage())
-                    .errorCode(ErrorCode.USER_ALREADY_CREATED_PROJECT)
+                    .errorCode(ErrorCode.CAN_NOT_SEND_EMAIL)
                     .dataCausedError(exception)
                     .build();
         }
