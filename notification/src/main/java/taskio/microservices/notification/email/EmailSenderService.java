@@ -7,7 +7,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import taskio.common.dto.errors.logic.ErrorCode;
 import taskio.common.exceptions.mail.CanNotSendEmailException;
+
+import java.util.Date;
 
 @Service
 @RequiredArgsConstructor
@@ -26,7 +29,12 @@ public class EmailSenderService {
             mimeMessage.setText(body);
             mailSender.send(mimeMessage);
         } catch (Exception exception) {
-            throw new CanNotSendEmailException(exception.getMessage());
+            throw CanNotSendEmailException.builder()
+                    .errorDate(new Date(System.currentTimeMillis()))
+                    .errorMessage(exception.getMessage())
+                    .errorCode(ErrorCode.USER_ALREADY_CREATED_PROJECT)
+                    .dataCausedError(exception)
+                    .build();
         }
     }
 }

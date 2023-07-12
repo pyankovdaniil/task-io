@@ -1,4 +1,4 @@
-package taskio.common.dto.errors;
+package taskio.common.dto.errors.data;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,7 +11,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ErrorResponse {
-    private int numberOfErrors;
-    private List<ErrorEntity> errorEntities;
+public class InvalidDataResponse {
+    private int fieldErrorsNumber;
+    private List<DataFieldError> fieldErrors;
 }

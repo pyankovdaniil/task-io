@@ -1,4 +1,4 @@
-package taskio.common.dto.errors;
+package taskio.common.dto.errors.logic;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
-import java.util.List;
 
 @Data
 @Builder
@@ -15,7 +14,6 @@ import java.util.List;
 public class ErrorEntity {
     private ErrorCode errorCode;
     private Date errorDate;
-    private String message;
+    private String errorMessage;
     private Object dataCausedError;
-    private List<FieldError> fieldErrors;
 }

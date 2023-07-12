@@ -1,4 +1,4 @@
-package taskio.common.dto.errors;
+package taskio.common.dto.errors.data;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class FieldError {
+public class DataFieldError {
     private String fieldName;
     private String fieldError;
 }

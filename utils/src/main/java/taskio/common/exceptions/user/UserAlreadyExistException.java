@@ -1,7 +1,19 @@
 package taskio.common.exceptions.user;
 
-public class UserAlreadyExistException extends RuntimeException {
-    public UserAlreadyExistException(String message) {
-        super(message);
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import org.springframework.validation.BindingResult;
+import taskio.common.dto.errors.logic.ErrorCode;
+import taskio.common.exceptions.BaseException;
+
+import java.util.Date;
+
+@EqualsAndHashCode(callSuper = true)
+@Getter
+public class UserAlreadyExistException extends BaseException {
+    @Builder
+    public UserAlreadyExistException(Date errorDate, String errorMessage, ErrorCode errorCode, Object dataCausedError, BindingResult bindingResult) {
+        super(errorDate, errorMessage, errorCode, dataCausedError, bindingResult);
     }
 }

@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import taskio.common.dto.authentication.userdata.UserDataFromEmailRequest;
+import taskio.common.dto.errors.logic.ErrorCode;
 import taskio.common.dto.notification.NotificationRequest;
 import taskio.common.dto.projects.confirminvite.ConfirmInviteRequest;
 import taskio.common.dto.projects.create.CreateRequest;
@@ -73,7 +74,12 @@ public class ProjectsRestService implements ProjectsService {
         for (ProjectMember membership : userMemberships) {
             if (membership.getRole().equals("Creator")
                     && membership.getProject().getName().equals(request.getProjectName())) {
-                throw new UserAlreadyCreatedProjectException("You already have created project with this name");
+                throw UserAlreadyCreatedProjectException.builder()
+                        .errorDate(new Date(System.currentTimeMillis()))
+                        .errorMessage("You have already created project with this name")
+                        .errorCode(ErrorCode.USER_ALREADY_CREATED_PROJECT)
+                        .dataCausedError(request)
+                        .build();
             }
         }
 
@@ -101,8 +107,13 @@ public class ProjectsRestService implements ProjectsService {
         }
 
         if (!isInviterMember) {
-            throw new InviterIsNotMemberException("You are not a member of that project," +
-                    " so you can not invite people here!");
+            throw InviterIsNotMemberException.builder()
+                    .errorDate(new Date(System.currentTimeMillis()))
+                    .errorMessage("You are not a member of that project," +
+                            " so you can not invite people here!")
+                    .errorCode(ErrorCode.INVITER_IS_NOT_MEMBER)
+                    .dataCausedError(request)
+                    .build();
         }
 
         User userToInvite = authenticationClient.getUserData(UserDataFromEmailRequest.builder()
@@ -112,7 +123,12 @@ public class ProjectsRestService implements ProjectsService {
         List<ProjectMember> userToInviteMemberships = projectMemberRepository.findAllByUser(userToInvite);
         for (ProjectMember userToInviteMembership : userToInviteMemberships) {
             if (userToInviteMembership.getProject().getName().equals(request.getProjectName())) {
-                throw new UserAlreadyInProjectException("User with this email is already in this project!");
+                throw UserAlreadyInProjectException.builder()
+                        .errorDate(new Date(System.currentTimeMillis()))
+                        .errorMessage("You have already created project with this name")
+                        .errorCode(ErrorCode.USER_ALREADY_IN_PROJECT)
+                        .dataCausedError(request)
+                        .build();
             }
         }
 
@@ -165,7 +181,12 @@ public class ProjectsRestService implements ProjectsService {
         }
 
         if (!wasUserInvited) {
-            throw new UserWasNotInvitedToProjectException("You were not invited to a project that you try to confirm!");
+            throw UserWasNotInvitedToProjectException.builder()
+                    .errorDate(new Date(System.currentTimeMillis()))
+                    .errorMessage("You were not invited to a project that you try to confirm!")
+                    .errorCode(ErrorCode.USER_WAS_NOT_INVITED_TO_PROJECT)
+                    .dataCausedError(request)
+                    .build();
         }
 
         ProjectMember newProjectMember = ProjectMember.builder()
@@ -205,7 +226,12 @@ public class ProjectsRestService implements ProjectsService {
         try {
             return authenticationClient.getUserData(bearerToken);
         } catch (FeignException exception) {
-            throw new UserNotFoundException("Invalid or expired access token");
+            throw UserNotFoundException.builder()
+                    .errorDate(new Date(System.currentTimeMillis()))
+                    .errorMessage("User with this email is not in database")
+                    .errorCode(ErrorCode.USER_NOT_FOUND_BY_EMAIL_IN_DATABASE)
+                    .dataCausedError(bearerToken)
+                    .build();
         }
     }
 }

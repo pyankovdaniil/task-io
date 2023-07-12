@@ -11,6 +11,7 @@ import taskio.common.dto.authentication.authenticate.AuthenticationResponse;
 import taskio.common.dto.authentication.refresh.RefreshResponse;
 import taskio.common.dto.authentication.register.RegistrationRequest;
 import taskio.common.dto.authentication.verify.EmailVerificationRequest;
+import taskio.common.dto.errors.logic.ErrorCode;
 import taskio.common.dto.notification.NotificationRequest;
 import taskio.common.exceptions.mail.InvalidEmailVerificationCodeException;
 import taskio.common.exceptions.user.InvalidTokenException;
@@ -62,14 +63,24 @@ public class AuthenticationRestService implements AuthenticationService {
     public void register(RegistrationRequest request) {
         Optional<User> checkEmailUser = userRepository.findUserByEmail(request.getEmail());
         if (checkEmailUser.isPresent()) {
-            throw new UserAlreadyExistException("User with this email is already registered");
+            throw UserAlreadyExistException.builder()
+                    .errorDate(new Date(System.currentTimeMillis()))
+                    .errorMessage("User with this email is already registered")
+                    .errorCode(ErrorCode.USER_ALREADY_EXIST_IN_DATABASE)
+                    .dataCausedError(request)
+                    .build();
         }
 
         Optional<UserNotVerified> userNotVerifiedCheck = userNotVerifiedRepository
                 .findUserNotVerifiedByEmail(request.getEmail());
         if (userNotVerifiedCheck.isPresent()) {
-            throw new UserAlreadyExistException("You have already send /register request, now you need" +
-                    " to verify your email!");
+            throw UserAlreadyExistException.builder()
+                    .errorDate(new Date(System.currentTimeMillis()))
+                    .errorMessage("You have already send /register request, now you need" +
+                            " to verify your email!")
+                    .errorCode(ErrorCode.USER_ALREADY_EXIST_IN_DATABASE)
+                    .dataCausedError(request)
+                    .build();
         }
 
         String emailVerificationCode = verificationCodeGenerator
@@ -104,13 +115,23 @@ public class AuthenticationRestService implements AuthenticationService {
                 .findUserNotVerifiedByEmail(request.getEmail());
 
         if (userNotVerified.isEmpty()) {
-            throw new UserNotFoundException("Verification code on that email was not sent. Please, send" +
-                    " /register request first!");
+            throw UserNotFoundException.builder()
+                    .errorDate(new Date(System.currentTimeMillis()))
+                    .errorMessage("Verification code on that email was not sent. Please, send" +
+                            " /register request first!")
+                    .errorCode(ErrorCode.USER_NOT_FOUND_BY_EMAIL_IN_DATABASE)
+                    .dataCausedError(request)
+                    .build();
         }
 
         if (!userNotVerified.get().getVerificationCode().equals(request.getEmailVerificationCode())) {
-            throw new InvalidEmailVerificationCodeException("This is incorrect email verification code." +
-                    " Please, check you email again");
+            throw InvalidEmailVerificationCodeException.builder()
+                    .errorDate(new Date(System.currentTimeMillis()))
+                    .errorMessage("This is incorrect email verification code." +
+                            " Please, check you email again")
+                    .errorCode(ErrorCode.INVALID_EMAIL_VERIFICATION_CODE)
+                    .dataCausedError(request)
+                    .build();
         }
 
         User user = User.builder()
@@ -128,11 +149,21 @@ public class AuthenticationRestService implements AuthenticationService {
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         Optional<User> userInDatabase = userRepository.findUserByEmail(request.getEmail());
         if (userInDatabase.isEmpty()) {
-            throw new UserNotFoundException("User with this email is not in database");
+            throw UserNotFoundException.builder()
+                    .errorDate(new Date(System.currentTimeMillis()))
+                    .errorMessage("User with this email is not in database")
+                    .errorCode(ErrorCode.USER_NOT_FOUND_BY_EMAIL_IN_DATABASE)
+                    .dataCausedError(request)
+                    .build();
         }
 
         if (!passwordEncoder.matches(request.getPassword(), userInDatabase.get().getPassword())) {
-            throw new PasswordNotMatchException("Invalid password");
+            throw PasswordNotMatchException.builder()
+                    .errorDate(new Date(System.currentTimeMillis()))
+                    .errorMessage("Invalid password")
+                    .errorCode(ErrorCode.PASSWORD_NOT_MATCH)
+                    .dataCausedError(request)
+                    .build();
         }
 
         TokensGenerationResponse tokens = tokensGenerator.generateTokensForUser(userInDatabase.get());
@@ -152,7 +183,12 @@ public class AuthenticationRestService implements AuthenticationService {
 
         Optional<User> user = userRepository.findUserByEmail(email);
         if (user.isEmpty()) {
-            throw new UserNotFoundException("User with this email is not in database");
+            throw UserNotFoundException.builder()
+                    .errorDate(new Date(System.currentTimeMillis()))
+                    .errorMessage("User with this email is not in database")
+                    .errorCode(ErrorCode.USER_NOT_FOUND_BY_EMAIL_IN_DATABASE)
+                    .dataCausedError(email)
+                    .build();
         }
 
         return RefreshResponse.builder()
@@ -164,7 +200,12 @@ public class AuthenticationRestService implements AuthenticationService {
         String email = extractEmailFromToken(bearerToken);
         Optional<String> savedRefreshToken = Optional.ofNullable(redisTemplate.opsForValue().get(email));
         if (savedRefreshToken.isEmpty()) {
-            throw new InvalidTokenException("You are already logged out");
+            throw InvalidTokenException.builder()
+                    .errorDate(new Date(System.currentTimeMillis()))
+                    .errorMessage("You are already logged out")
+                    .errorCode(ErrorCode.INVALID_TOKEN)
+                    .dataCausedError(email)
+                    .build();
         }
 
         redisTemplate.opsForValue().getAndDelete(email);
@@ -189,7 +230,12 @@ public class AuthenticationRestService implements AuthenticationService {
         Optional<String> email = jwtService.extractEmailFromToken(refreshToken);
 
         if (email.isEmpty()) {
-            throw new InvalidTokenException("Invalid or expired access token, can not extract user");
+            throw InvalidTokenException.builder()
+                    .errorDate(new Date(System.currentTimeMillis()))
+                    .errorMessage("Invalid or expired access token, can not extract user")
+                    .errorCode(ErrorCode.INVALID_TOKEN)
+                    .dataCausedError(email)
+                    .build();
         }
 
         return email.get();
@@ -198,14 +244,24 @@ public class AuthenticationRestService implements AuthenticationService {
     private void checkSavedRefreshToken(String email) {
         Optional<String> savedRefreshToken = Optional.ofNullable(redisTemplate.opsForValue().get(email));
         if (savedRefreshToken.isEmpty()) {
-            throw new InvalidTokenException("Can not find your refresh token, please authenticate again");
+            throw InvalidTokenException.builder()
+                    .errorDate(new Date(System.currentTimeMillis()))
+                    .errorMessage("Can not find your refresh token, please authenticate again")
+                    .errorCode(ErrorCode.INVALID_TOKEN)
+                    .dataCausedError(email)
+                    .build();
         }
     }
 
     private User getUserFromRepository(String email) {
         Optional<User> user = userRepository.findUserByEmail(email);
         if (user.isEmpty()) {
-            throw new UserNotFoundException("User with this email is not in database");
+            throw UserNotFoundException.builder()
+                    .errorDate(new Date(System.currentTimeMillis()))
+                    .errorMessage("User with this email is not in database")
+                    .errorCode(ErrorCode.USER_NOT_FOUND_BY_EMAIL_IN_DATABASE)
+                    .dataCausedError(email)
+                    .build();
         }
 
         return user.get();
