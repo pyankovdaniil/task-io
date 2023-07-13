@@ -4,6 +4,9 @@ import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoOperations;
+import org.springframework.data.mongodb.core.index.Index;
 import org.springframework.stereotype.Service;
 import taskio.common.dto.authentication.userdata.UserDataFromEmailRequest;
 import taskio.common.dto.errors.logic.ErrorCode;
@@ -34,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -48,6 +52,9 @@ public class ProjectsRestService implements ProjectsService {
     @Value("${rabbitmq.routing-keys.internal-notification}")
     private String rabbitRoutingKey;
 
+    @Value("${not-verified-project-member-expire-time-seconds}")
+    private int notVerifiedProjectMemberExpireTimeSeconds;
+
     private final AuthenticationClient authenticationClient;
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
@@ -55,6 +62,7 @@ public class ProjectsRestService implements ProjectsService {
     private final ProjectMemberNotVerifiedRepository projectMemberNotVerifiedRepository;
     private final VerificationCodeGenerator verificationCodeGenerator;
     private final RabbitMQMessageProducer messageProducer;
+    private final MongoOperations mongoOps;
 
     @Override
     public void create(CreateRequest request, String bearerToken) {
@@ -210,6 +218,10 @@ public class ProjectsRestService implements ProjectsService {
                 .build();
 
         messageProducer.publish(notificationRequest, rabbitExchange, rabbitRoutingKey);
+
+        mongoOps.indexOps(ProjectMemberNotVerified.class).ensureIndex(new Index().on("createdAt", Sort.Direction.ASC)
+                .expire(notVerifiedProjectMemberExpireTimeSeconds, TimeUnit.SECONDS));
+
         projectMemberNotVerifiedRepository.save(newProjectMemberNotVerified);
     }
 

@@ -40,6 +40,8 @@ spec:
               value: {{ .Values.projects.mongo.database }}
             - name: MONGO_AUTHENTICATION_DATABASE
               value: {{ .Values.mongo.authenticationDatabase }}
+            - name: NOT_VERIFIED_PROJECT_MEMBER_EXPIRE_TIME_SECONDS
+              value: "{{ .Values.projects.mongo.notVerifiedProjectMemberExpireTimeSeconds | toString }}"
             - name: AUTHENTICATION_MICROSERVICE_URL
               value: "http://{{ .Values.authentication.service.name }}:{{ .Values.authentication.service.ports.rest.listenPort | toString }}/api/rest/v1/auth"
             - name: MONGO_USERNAME

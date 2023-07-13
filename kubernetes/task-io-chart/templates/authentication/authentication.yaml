@@ -38,6 +38,8 @@ spec:
               value: {{ .Values.mongo.authenticationDatabase }}
             - name: MONGO_DATABASE
               value: {{ .Values.authentication.mongo.database }}
+            - name: NOT_VERIFIED_USER_EXPIRE_TIME_SECONDS
+              value: "{{ .Values.authentication.mongo.notVerifiedUserExpireTimeSeconds | toString }}"
             - name: JWT_SECRET_KEY
               value: {{ .Values.authentication.jwt.secretKey }}
             - name: JWT_ACCESS_TOKEN_EXPIRE_TIME_MS

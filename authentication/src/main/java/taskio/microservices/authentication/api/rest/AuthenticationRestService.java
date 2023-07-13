@@ -3,6 +3,9 @@ package taskio.microservices.authentication.api.rest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoOperations;
+import org.springframework.data.mongodb.core.index.Index;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -33,6 +36,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -50,6 +54,9 @@ public class AuthenticationRestService implements AuthenticationService {
     @Value("${rabbitmq.routing-keys.internal-notification}")
     private String rabbitRoutingKey;
 
+    @Value("${not-verified-user-expire-time-seconds}")
+    private int notVerifiedUserExpireTimeSeconds;
+
     private final UserRepository userRepository;
     private final UserNotVerifiedRepository userNotVerifiedRepository;
     private final TokensGenerator tokensGenerator;
@@ -59,6 +66,7 @@ public class AuthenticationRestService implements AuthenticationService {
     private final VerificationCodeGenerator verificationCodeGenerator;
     private final RabbitMQMessageProducer messageProducer;
     private final CustomCompositeUuidGenerator uuidGenerator;
+    private final MongoOperations mongoOps;
 
     @Override
     public void register(RegistrationRequest request) {
@@ -106,6 +114,9 @@ public class AuthenticationRestService implements AuthenticationService {
                 .verificationCode(emailVerificationCode)
                 .createdAt(Date.from(Instant.now()))
                 .build();
+
+        mongoOps.indexOps(UserNotVerified.class).ensureIndex(new Index().on("createdAt", Sort.Direction.ASC)
+                .expire(notVerifiedUserExpireTimeSeconds, TimeUnit.SECONDS));
 
         userNotVerifiedRepository.save(userNotVerified);
     }

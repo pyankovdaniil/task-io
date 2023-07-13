@@ -27,7 +27,5 @@ public class ProjectMemberNotVerified {
 
     @DBRef
     private Project project;
-
-    @Indexed(name = "projectMemberNotVerifiedCreatedAtIndex", expireAfterSeconds = 60, unique = true)
     private Date createdAt;
 }
