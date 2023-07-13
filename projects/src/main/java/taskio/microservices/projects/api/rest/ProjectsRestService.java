@@ -294,10 +294,10 @@ public class ProjectsRestService implements ProjectsService {
 
     @Override
     public void leaveProject(LeaveProjectRequest request, String bearerToken) {
-        User user = getUserData(bearerToken);
-        Optional<ProjectMember> userMembership = checkUserInProjectAndGetMembership(user, request.getProjectIdentifier());
+        User leavingUser = getUserData(bearerToken);
+        Optional<ProjectMember> leavingUserMembership = checkUserInProjectAndGetMembership(leavingUser, request.getProjectIdentifier());
 
-        if (userMembership.isEmpty()) {
+        if (leavingUserMembership.isEmpty()) {
             throw UserIsNotInProjectException.builder()
                     .errorDate(Date.from(Instant.now()))
                     .errorMessage("You are not a member of a project you try to leave!")
@@ -306,16 +306,29 @@ public class ProjectsRestService implements ProjectsService {
                     .build();
         }
 
-        List<ProjectMember> remainingMembers = userMembership.get().getProject().getMembers();
-        remainingMembers.remove(userMembership.get());
+        List<ProjectMember> remainingMembers = leavingUserMembership.get().getProject().getMembers();
+        long adminsCount = remainingMembers.stream().filter(member -> member.getRole().equals(ProjectMemberRole.ADMIN)).count();
+        boolean isCreatorInProject = remainingMembers.stream().anyMatch(member -> member.getRole().equals(ProjectMemberRole.CREATOR));
 
-        if (remainingMembers.isEmpty()) {
-            projectRepository.delete(userMembership.get().getProject());
-        } else {
-            projectRepository.save(userMembership.get().getProject());
+        if ((leavingUserMembership.get().getRole().equals(ProjectMemberRole.CREATOR) && adminsCount < 1) ||
+                (leavingUserMembership.get().getRole().equals(ProjectMemberRole.ADMIN) && (adminsCount < 1 && !isCreatorInProject))) {
+            throw UserCanNotLeaveException.builder()
+                    .errorDate(Date.from(Instant.now()))
+                    .errorMessage("You can not leave, because in project will be no admin!")
+                    .errorCode(ErrorCode.USER_CAN_NOT_LEAVE)
+                    .dataCausedError(request)
+                    .build();
         }
 
-        projectMemberRepository.delete(userMembership.get());
+        remainingMembers.remove(leavingUserMembership.get());
+
+        if (remainingMembers.isEmpty()) {
+            projectRepository.delete(leavingUserMembership.get().getProject());
+        } else {
+            projectRepository.save(leavingUserMembership.get().getProject());
+        }
+
+        projectMemberRepository.delete(leavingUserMembership.get());
     }
 
     @Override
