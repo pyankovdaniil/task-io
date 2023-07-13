@@ -18,12 +18,14 @@ import taskio.common.dto.projects.invite.InviteRequest;
 import taskio.common.dto.projects.leave.LeaveProjectRequest;
 import taskio.common.dto.projects.list.ProjectsListResponse;
 import taskio.common.dto.projects.list.SimpleProjectMembership;
-import taskio.common.exceptions.projects.ProjectIdentifierIsTakenException;
-import taskio.common.exceptions.user.*;
+import taskio.common.dto.projects.makeadmin.MakeAdminRequest;
+import taskio.common.exceptions.projects.*;
+import taskio.common.exceptions.user.UserNotFoundException;
 import taskio.common.model.authentication.User;
 import taskio.common.model.projects.Project;
 import taskio.common.model.projects.ProjectMember;
 import taskio.common.model.projects.ProjectMemberNotVerified;
+import taskio.common.model.projects.ProjectMemberRole;
 import taskio.common.uuid.CustomCompositeUuidGenerator;
 import taskio.common.verification.VerificationCodeGenerator;
 import taskio.configs.amqp.RabbitMQMessageProducer;
@@ -71,7 +73,7 @@ public class ProjectsRestService implements ProjectsService {
         ProjectMember creatorMember = ProjectMember.builder()
                 .id(uuidGenerator.generateCustomUuid(ProjectMember.class.getSimpleName()))
                 .user(creator)
-                .role("Creator")
+                .role(ProjectMemberRole.CREATOR)
                 .build();
 
         String newProjectId = uuidGenerator.generateCustomUuid(Project.class.getSimpleName());
@@ -85,19 +87,6 @@ public class ProjectsRestService implements ProjectsService {
                 .members(List.of(creatorMember))
                 .build();
 
-        List<ProjectMember> creatorMemberships = projectMemberRepository.findAllByUser(creator);
-        for (ProjectMember membership : creatorMemberships) {
-            if (membership.getRole().equals("Creator")
-                    && membership.getProject().getName().equals(request.getProjectName())) {
-                throw UserAlreadyCreatedProjectException.builder()
-                        .errorDate(Date.from(Instant.now()))
-                        .errorMessage("You have already created project with this name")
-                        .errorCode(ErrorCode.USER_ALREADY_CREATED_PROJECT_WITH_THIS_NAME)
-                        .dataCausedError(request)
-                        .build();
-            }
-        }
-
         projectMemberRepository.save(creatorMember);
         projectRepository.save(newProject);
 
@@ -108,16 +97,9 @@ public class ProjectsRestService implements ProjectsService {
     @Override
     public void changeProjectIdentifier(ChangeProjectIdentifierRequest request, String bearerToken) {
         User changer = getUserData(bearerToken);
-        Optional<Project> projectToChangeIdentifier = Optional.empty();
+        Optional<ProjectMember> changerMembership = checkUserInProjectAndGetMembership(changer, request.getProjectIdentifier());
 
-        List<ProjectMember> changerMemberships = projectMemberRepository.findAllByUser(changer);
-        for (ProjectMember membership : changerMemberships) {
-            if (membership.getProject().getProjectIdentifier().equals(request.getProjectIdentifier())) {
-                projectToChangeIdentifier = Optional.of(membership.getProject());
-            }
-        }
-
-        if (projectToChangeIdentifier.isEmpty()) {
+        if (changerMembership.isEmpty()) {
             throw UserIsNotInProjectException.builder()
                     .errorDate(Date.from(Instant.now()))
                     .errorMessage("You are not a member of this project!")
@@ -126,7 +108,7 @@ public class ProjectsRestService implements ProjectsService {
                     .build();
         }
 
-        if (!projectToChangeIdentifier.get().getCreatorEmail().equals(changer.getEmail())) {
+        if (!changerMembership.get().getProject().getCreatorEmail().equals(changer.getEmail())) {
             throw UserIsNotCreatorException.builder()
                     .errorDate(Date.from(Instant.now()))
                     .errorMessage("You are not a creator of that project, so" +
@@ -149,27 +131,16 @@ public class ProjectsRestService implements ProjectsService {
                     .build();
         }
 
-        projectToChangeIdentifier.get().setProjectIdentifier(request.getNewProjectIdentifier());
-        projectRepository.save(projectToChangeIdentifier.get());
+        changerMembership.get().getProject().setProjectIdentifier(request.getNewProjectIdentifier());
+        projectRepository.save(changerMembership.get().getProject());
     }
 
     @Override
     public void invite(InviteRequest request, String bearerToken) {
         User inviter = getUserData(bearerToken);
-        List<ProjectMember> inviterMemberships = projectMemberRepository.findAllByUser(inviter);
+        Optional<ProjectMember> inviterMembership = checkUserInProjectAndGetMembership(inviter, request.getProjectIdentifier());
 
-        Optional<Project> projectToInvite = Optional.empty();
-        boolean isInviterMember = false;
-
-        for (ProjectMember inviterMembership : inviterMemberships) {
-            if (inviterMembership.getProject().getProjectIdentifier().equals(request.getProjectIdentifier())) {
-                projectToInvite = Optional.of(inviterMembership.getProject());
-                isInviterMember = true;
-                break;
-            }
-        }
-
-        if (!isInviterMember) {
+        if (inviterMembership.isEmpty()) {
             throw InviterIsNotMemberException.builder()
                     .errorDate(Date.from(Instant.now()))
                     .errorMessage("You are not a member of that project," +
@@ -183,28 +154,29 @@ public class ProjectsRestService implements ProjectsService {
                 .email(request.getInvitedPersonEmail())
                 .build());
 
-        List<ProjectMember> userToInviteMemberships = projectMemberRepository.findAllByUser(userToInvite);
-        for (ProjectMember userToInviteMembership : userToInviteMemberships) {
-            if (userToInviteMembership.getProject().getProjectIdentifier().equals(request.getProjectIdentifier())) {
-                throw UserAlreadyInProjectException.builder()
-                        .errorDate(Date.from(Instant.now()))
-                        .errorMessage("You have already in project with this name")
-                        .errorCode(ErrorCode.USER_ALREADY_IN_PROJECT)
-                        .dataCausedError(request)
-                        .build();
-            }
+        Optional<ProjectMember> userToInviteMembership = checkUserInProjectAndGetMembership(userToInvite,
+                request.getProjectIdentifier());
+
+        if (userToInviteMembership.isPresent()) {
+            throw UserAlreadyInProjectException.builder()
+                    .errorDate(Date.from(Instant.now()))
+                    .errorMessage("You have already in project with this name")
+                    .errorCode(ErrorCode.USER_ALREADY_IN_PROJECT)
+                    .dataCausedError(request)
+                    .build();
         }
+
+        String confirmInviteVerificationCode = verificationCodeGenerator
+                .generateVerificationCode(confirmInviteVerificationCodeLength).toUpperCase();
 
         ProjectMemberNotVerified newProjectMemberNotVerified = ProjectMemberNotVerified.builder()
                 .id(uuidGenerator.generateCustomUuid(ProjectMemberNotVerified.class.getSimpleName()))
                 .user(userToInvite)
-                .role("Member")
-                .project(projectToInvite.get())
+                .role(ProjectMemberRole.MEMBER)
+                .verificationCode(confirmInviteVerificationCode)
+                .project(inviterMembership.get().getProject())
                 .createdAt(Date.from(Instant.now()))
                 .build();
-
-        String confirmInviteVerificationCode = verificationCodeGenerator
-                .generateVerificationCode(confirmInviteVerificationCodeLength).toUpperCase();
 
         log.info("Created invite confirmation code: {}", confirmInviteVerificationCode);
 
@@ -213,7 +185,7 @@ public class ProjectsRestService implements ProjectsService {
                 .subject("Your task.io email verification code!")
                 .text("Dear " + newProjectMemberNotVerified.getUser().getFullName() +
                         "!\n" + inviter.getFullName() + "<" + inviter.getEmail() + "> was invited you to a project: " +
-                        projectToInvite.get().getName() + ".\nIf you want to join this project, here" +
+                        inviterMembership.get().getProject().getName() + ".\nIf you want to join this project, here" +
                         " is you confirmation code: " + confirmInviteVerificationCode)
                 .build();
 
@@ -231,23 +203,10 @@ public class ProjectsRestService implements ProjectsService {
                 .email(request.getEmail())
                 .build());
 
-        List<ProjectMemberNotVerified> userInvitations = projectMemberNotVerifiedRepository
-                .findAllByUser(notVerifiedInvitedUser);
+        Optional<ProjectMemberNotVerified> userInvitation =
+                checkUserInProjectAndGetNotVerifiedMembership(notVerifiedInvitedUser, request.getProjectIdentifier());
 
-        Optional<Project> projectToInvite = Optional.empty();
-        Optional<ProjectMemberNotVerified> projectMemberNotVerified = Optional.empty();
-        boolean wasUserInvited = false;
-
-        for (ProjectMemberNotVerified userInvitation : userInvitations) {
-            if (userInvitation.getProject().getProjectIdentifier().equals(request.getProjectIdentifier())) {
-                projectToInvite = Optional.of(userInvitation.getProject());
-                projectMemberNotVerified = Optional.of(userInvitation);
-                wasUserInvited = true;
-                break;
-            }
-        }
-
-        if (!wasUserInvited) {
+        if (userInvitation.isEmpty()) {
             throw UserWasNotInvitedToProjectException.builder()
                     .errorDate(Date.from(Instant.now()))
                     .errorMessage("You were not invited to a project that you try to confirm!")
@@ -256,39 +215,89 @@ public class ProjectsRestService implements ProjectsService {
                     .build();
         }
 
+        if (!userInvitation.get().getVerificationCode().equals(request.getInviteConfirmationCode())) {
+            throw InvalidInviteConfirmationCodeException.builder()
+                    .errorDate(Date.from(Instant.now()))
+                    .errorMessage("You were not invited to a project that you try to confirm!")
+                    .errorCode(ErrorCode.INVALID_INVITE_CONFIRMATION_CODE)
+                    .dataCausedError(request)
+                    .build();
+        }
+
         ProjectMember newProjectMember = ProjectMember.builder()
                 .id(uuidGenerator.generateCustomUuid(ProjectMember.class.getSimpleName()))
                 .user(notVerifiedInvitedUser)
-                .role("Member")
-                .project(projectToInvite.get())
+                .role(ProjectMemberRole.MEMBER)
+                .project(userInvitation.get().getProject())
                 .build();
 
-        projectMemberNotVerifiedRepository.delete(projectMemberNotVerified.get());
+        projectMemberNotVerifiedRepository.delete(userInvitation.get());
         projectMemberRepository.save(newProjectMember);
 
-        projectToInvite.get().getMembers().add(newProjectMember);
-        projectRepository.save(projectToInvite.get());
+        userInvitation.get().getProject().getMembers().add(newProjectMember);
+        projectRepository.save(userInvitation.get().getProject());
+    }
+
+    @Override
+    public void makeAdmin(MakeAdminRequest request, String bearerToken) {
+        User adminSetter = getUserData(bearerToken);
+        Optional<ProjectMember> adminSetterMembership =
+                checkUserInProjectAndGetMembership(adminSetter, request.getProjectIdentifier());
+
+        if (adminSetterMembership.isEmpty()) {
+            throw UserIsNotInProjectException.builder()
+                    .errorDate(Date.from(Instant.now()))
+                    .errorMessage("You are not a member of a project you try make admin in!")
+                    .errorCode(ErrorCode.USER_IS_NOT_IN_PROJECT)
+                    .dataCausedError(request)
+                    .build();
+        }
+
+        if (!(adminSetterMembership.get().getRole().equals(ProjectMemberRole.CREATOR) ||
+                adminSetterMembership.get().getRole().equals(ProjectMemberRole.ADMIN))) {
+            throw UserIsNotAllowedToSetAdminException.builder()
+                    .errorDate(Date.from(Instant.now()))
+                    .errorMessage("You are not creator or an admin, so you can not set admins in this project!")
+                    .errorCode(ErrorCode.USER_IS_NOT_ALLOWED_TO_SET_ADMIN)
+                    .dataCausedError(request)
+                    .build();
+        }
+
+        User newAdmin = authenticationClient.getUserData(UserDataFromEmailRequest.builder()
+                .email(request.getNewAdminEmail())
+                .build());
+
+        Optional<ProjectMember> newAdminMembership =
+                checkUserInProjectAndGetMembership(newAdmin, request.getProjectIdentifier());
+
+        if (newAdminMembership.isEmpty()) {
+            throw UserIsNotInProjectException.builder()
+                    .errorDate(Date.from(Instant.now()))
+                    .errorMessage("The use you try to set admin is not a member of this project!")
+                    .errorCode(ErrorCode.USER_IS_NOT_IN_PROJECT)
+                    .dataCausedError(request)
+                    .build();
+        }
+
+        if (newAdminMembership.get().getRole().equals(ProjectMemberRole.ADMIN)) {
+            throw UserIsAlreadyAdminException.builder()
+                    .errorDate(Date.from(Instant.now()))
+                    .errorMessage(request.getNewAdminEmail() + " is already admin in this project!")
+                    .errorCode(ErrorCode.USER_IS_ALREADY_ADMIN)
+                    .dataCausedError(request)
+                    .build();
+        }
+
+        newAdminMembership.get().setRole(ProjectMemberRole.ADMIN);
+        projectMemberRepository.save(newAdminMembership.get());
     }
 
     @Override
     public void leaveProject(LeaveProjectRequest request, String bearerToken) {
         User user = getUserData(bearerToken);
-        List<ProjectMember> memberships = projectMemberRepository.findAllByUser(user);
+        Optional<ProjectMember> userMembership = checkUserInProjectAndGetMembership(user, request.getProjectIdentifier());
 
-        Optional<Project> projectToLeave = Optional.empty();
-        Optional<ProjectMember> projectMemberToDelete = Optional.empty();
-        boolean isUserInProject = false;
-
-        for (ProjectMember membership : memberships) {
-            if (membership.getProject().getProjectIdentifier().equals(request.getProjectIdentifier())) {
-                projectToLeave = Optional.of(membership.getProject());
-                projectMemberToDelete = Optional.of(membership);
-                isUserInProject = true;
-                break;
-            }
-        }
-
-        if (!isUserInProject) {
+        if (userMembership.isEmpty()) {
             throw UserIsNotInProjectException.builder()
                     .errorDate(Date.from(Instant.now()))
                     .errorMessage("You are not a member of a project you try to leave!")
@@ -297,16 +306,16 @@ public class ProjectsRestService implements ProjectsService {
                     .build();
         }
 
-        List<ProjectMember> remainingMembers = projectToLeave.get().getMembers();
-        remainingMembers.remove(projectMemberToDelete.get());
+        List<ProjectMember> remainingMembers = userMembership.get().getProject().getMembers();
+        remainingMembers.remove(userMembership.get());
 
         if (remainingMembers.isEmpty()) {
-            projectRepository.delete(projectToLeave.get());
+            projectRepository.delete(userMembership.get().getProject());
         } else {
-            projectRepository.save(projectToLeave.get());
+            projectRepository.save(userMembership.get().getProject());
         }
 
-        projectMemberRepository.delete(projectMemberToDelete.get());
+        projectMemberRepository.delete(userMembership.get());
     }
 
     @Override
@@ -327,6 +336,26 @@ public class ProjectsRestService implements ProjectsService {
                 .numberOfProjects(simpleProjectMemberships.size())
                 .memberships(simpleProjectMemberships)
                 .build();
+    }
+
+    private Optional<ProjectMember> checkUserInProjectAndGetMembership(User user, String projectIdentifier) {
+        for (ProjectMember membership : projectMemberRepository.findAllByUser(user)) {
+            if (membership.getProject().getProjectIdentifier().equals(projectIdentifier)) {
+                return Optional.of(membership);
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    private Optional<ProjectMemberNotVerified> checkUserInProjectAndGetNotVerifiedMembership(User user, String projectIdentifier) {
+        for (ProjectMemberNotVerified membership : projectMemberNotVerifiedRepository.findAllByUser(user)) {
+            if (membership.getProject().getProjectIdentifier().equals(projectIdentifier)) {
+                return Optional.of(membership);
+            }
+        }
+
+        return Optional.empty();
     }
 
     private User getUserData(String bearerToken) {

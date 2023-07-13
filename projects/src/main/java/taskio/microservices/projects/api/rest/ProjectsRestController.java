@@ -11,6 +11,7 @@ import taskio.common.dto.projects.id.ChangeProjectIdentifierRequest;
 import taskio.common.dto.projects.invite.InviteRequest;
 import taskio.common.dto.projects.leave.LeaveProjectRequest;
 import taskio.common.dto.projects.list.ProjectsListResponse;
+import taskio.common.dto.projects.makeadmin.MakeAdminRequest;
 
 @RestController
 @RequiredArgsConstructor
@@ -45,6 +46,14 @@ public class ProjectsRestController {
     public ResponseMessage confirmInvite(@Valid @RequestBody ConfirmInviteRequest request) {
         projectsService.confirmInvite(request);
         return ResponseMessage.withMessage("You were successfully invited to a project!");
+    }
+
+    @PostMapping("/make-admin")
+    public ResponseMessage makeAdmin(@RequestHeader(HttpHeaders.AUTHORIZATION) String bearerToken,
+                                     @Valid @RequestBody MakeAdminRequest request) {
+        projectsService.makeAdmin(request, bearerToken);
+        return ResponseMessage.withMessage(request.getNewAdminEmail() + " is admin in " +
+                request.getProjectIdentifier() + " now!");
     }
 
     @PostMapping("/leave")

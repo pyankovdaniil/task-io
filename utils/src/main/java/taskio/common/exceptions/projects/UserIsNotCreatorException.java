@@ -1,4 +1,4 @@
-package taskio.common.exceptions.user;
+package taskio.common.exceptions.projects;
 
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -11,9 +11,9 @@ import java.util.Date;
 
 @EqualsAndHashCode(callSuper = true)
 @Getter
-public class UserAlreadyInProjectException extends BaseException {
+public class UserIsNotCreatorException extends BaseException {
     @Builder
-    public UserAlreadyInProjectException(Date errorDate, String errorMessage, ErrorCode errorCode, Object dataCausedError, BindingResult bindingResult) {
+    public UserIsNotCreatorException(Date errorDate, String errorMessage, ErrorCode errorCode, Object dataCausedError, BindingResult bindingResult) {
         super(errorDate, errorMessage, errorCode, dataCausedError, bindingResult);
     }
 }

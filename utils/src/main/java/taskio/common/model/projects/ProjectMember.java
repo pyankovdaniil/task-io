@@ -24,7 +24,7 @@ public class ProjectMember {
 
     @DBRef(db = "users")
     private User user;
-    private String role;
+    private ProjectMemberRole role;
 
     @DBRef
     private Project project;

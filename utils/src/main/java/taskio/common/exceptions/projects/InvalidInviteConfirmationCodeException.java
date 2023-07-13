@@ -1,4 +1,5 @@
-package taskio.common.exceptions.user;
+package taskio.common.exceptions.projects;
+
 
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -11,9 +12,9 @@ import java.util.Date;
 
 @EqualsAndHashCode(callSuper = true)
 @Getter
-public class UserIsNotCreatorException extends BaseException {
+public class InvalidInviteConfirmationCodeException extends BaseException {
     @Builder
-    public UserIsNotCreatorException(Date errorDate, String errorMessage, ErrorCode errorCode, Object dataCausedError, BindingResult bindingResult) {
+    public InvalidInviteConfirmationCodeException(Date errorDate, String errorMessage, ErrorCode errorCode, Object dataCausedError, BindingResult bindingResult) {
         super(errorDate, errorMessage, errorCode, dataCausedError, bindingResult);
     }
 }

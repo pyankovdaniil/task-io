@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import taskio.common.model.projects.ProjectMemberRole;
 
 @Data
 @Builder
@@ -12,5 +13,5 @@ import lombok.NoArgsConstructor;
 public class SimpleProjectMembership {
     private String projectIdentifier;
     private String projectName;
-    private String roleInProject;
+    private ProjectMemberRole roleInProject;
 }

@@ -1,4 +1,4 @@
-package taskio.common.exceptions.user;
+package taskio.common.exceptions.projects;
 
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -11,9 +11,9 @@ import java.util.Date;
 
 @EqualsAndHashCode(callSuper = true)
 @Getter
-public class InviterIsNotMemberException extends BaseException {
+public class UserWasNotInvitedToProjectException extends BaseException {
     @Builder
-    public InviterIsNotMemberException(Date errorDate, String errorMessage, ErrorCode errorCode, Object dataCausedError, BindingResult bindingResult) {
+    public UserWasNotInvitedToProjectException(Date errorDate, String errorMessage, ErrorCode errorCode, Object dataCausedError, BindingResult bindingResult) {
         super(errorDate, errorMessage, errorCode, dataCausedError, bindingResult);
     }
 }
