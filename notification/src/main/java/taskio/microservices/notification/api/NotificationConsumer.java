@@ -20,8 +20,8 @@ public class NotificationConsumer {
         log.info("Got notification request:\n{}",
                 objectMapper.toPrettyJson(notificationRequest));
 
-//        emailSenderService.sendEmail(notificationRequest.getToEmail(), notificationRequest.getSubject(),
-//                 notificationRequest.getText());
+        emailSenderService.sendEmail(notificationRequest.getToEmail(), notificationRequest.getSubject(),
+                 notificationRequest.getText());
 
         log.info("Successfully send email from request:\n{}",
                 objectMapper.toPrettyJson(notificationRequest));

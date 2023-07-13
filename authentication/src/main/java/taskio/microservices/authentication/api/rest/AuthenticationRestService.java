@@ -115,7 +115,9 @@ public class AuthenticationRestService implements AuthenticationService {
                 .createdAt(Date.from(Instant.now()))
                 .build();
 
-        mongoOps.indexOps(UserNotVerified.class).ensureIndex(new Index().on("createdAt", Sort.Direction.ASC)
+        mongoOps.indexOps(UserNotVerified.class).ensureIndex(new Index()
+                .named("not_verified_user_expire_time_seconds_index")
+                .on("createdAt", Sort.Direction.ASC)
                 .expire(notVerifiedUserExpireTimeSeconds, TimeUnit.SECONDS));
 
         userNotVerifiedRepository.save(userNotVerified);

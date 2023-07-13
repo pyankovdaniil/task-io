@@ -191,7 +191,9 @@ public class ProjectsRestService implements ProjectsService {
 
         messageProducer.publish(notificationRequest, rabbitExchange, rabbitRoutingKey);
 
-        mongoOps.indexOps(ProjectMemberNotVerified.class).ensureIndex(new Index().on("createdAt", Sort.Direction.ASC)
+        mongoOps.indexOps(ProjectMemberNotVerified.class).ensureIndex(new Index()
+                .named("project_member_not_verified_expire_time_seconds_index")
+                .on("createdAt", Sort.Direction.ASC)
                 .expire(notVerifiedProjectMemberExpireTimeSeconds, TimeUnit.SECONDS));
 
         projectMemberNotVerifiedRepository.save(newProjectMemberNotVerified);
