@@ -1,6 +1,5 @@
-package taskio.common.dto.projects.makeadmin;
+package taskio.common.dto.projects.delete;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,11 +11,8 @@ import org.hibernate.validator.constraints.Length;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MakeAdminRequest {
+public class DeleteProjectRequest {
     @NotBlank(message = "Project identifier should not be blank")
     @Length(min = 6, message = "Project identifier length should me minimum 6 characters")
     private String projectIdentifier;
-
-    @Email(message = "Please, type the correct email")
-    private String newAdminEmail;
 }

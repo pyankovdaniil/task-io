@@ -13,6 +13,7 @@ import taskio.common.dto.errors.logic.ErrorCode;
 import taskio.common.dto.notification.NotificationRequest;
 import taskio.common.dto.projects.confirminvite.ConfirmInviteRequest;
 import taskio.common.dto.projects.create.CreateRequest;
+import taskio.common.dto.projects.delete.DeleteProjectRequest;
 import taskio.common.dto.projects.id.ChangeProjectIdentifierRequest;
 import taskio.common.dto.projects.invite.InviteRequest;
 import taskio.common.dto.projects.leave.LeaveProjectRequest;
@@ -95,9 +96,10 @@ public class ProjectsRestService implements ProjectsService {
     }
 
     @Override
-    public void changeProjectIdentifier(ChangeProjectIdentifierRequest request, String bearerToken) {
+    public void changeIdentifier(ChangeProjectIdentifierRequest request, String bearerToken) {
         User changer = getUserData(bearerToken);
-        Optional<ProjectMember> changerMembership = checkUserInProjectAndGetMembership(changer, request.getProjectIdentifier());
+        Optional<ProjectMember> changerMembership =
+                checkUserInProjectAndGetMembership(changer, request.getProjectIdentifier());
 
         if (changerMembership.isEmpty()) {
             throw UserIsNotInProjectException.builder()
@@ -133,6 +135,44 @@ public class ProjectsRestService implements ProjectsService {
 
         changerMembership.get().getProject().setProjectIdentifier(request.getNewProjectIdentifier());
         projectRepository.save(changerMembership.get().getProject());
+    }
+
+    @Override
+    public void delete(DeleteProjectRequest request, String bearerToken) {
+        User deleter = getUserData(bearerToken);
+        Optional<ProjectMember> deleterMembership =
+                checkUserInProjectAndGetMembership(deleter, request.getProjectIdentifier());
+
+        if (deleterMembership.isEmpty()) {
+            throw UserIsNotInProjectException.builder()
+                    .errorDate(Date.from(Instant.now()))
+                    .errorMessage("You are not a member of a project you try to delete!")
+                    .errorCode(ErrorCode.INVITER_IS_NOT_MEMBER)
+                    .dataCausedError(request)
+                    .build();
+        }
+
+        boolean isCreatorInProject = deleterMembership.get().getProject().getMembers().stream().anyMatch(member -> member.getRole().equals(ProjectMemberRole.CREATOR));
+        if (isCreatorInProject && !deleterMembership.get().getRole().equals(ProjectMemberRole.CREATOR)) {
+            throw UserCanNotDeleteProjectException.builder()
+                    .errorDate(Date.from(Instant.now()))
+                    .errorMessage("You are not a creator of a project you try to delete!")
+                    .errorCode(ErrorCode.USER_CAN_NOT_DELETE_PROJECT)
+                    .dataCausedError(request)
+                    .build();
+        }
+
+        if (!isCreatorInProject && !deleterMembership.get().getRole().equals(ProjectMemberRole.ADMIN)) {
+            throw UserCanNotDeleteProjectException.builder()
+                    .errorDate(Date.from(Instant.now()))
+                    .errorMessage("You are not an admin of a project you try to delete!")
+                    .errorCode(ErrorCode.USER_CAN_NOT_DELETE_PROJECT)
+                    .dataCausedError(request)
+                    .build();
+        }
+
+        projectMemberRepository.deleteAll(deleterMembership.get().getProject().getMembers());
+        projectRepository.delete(deleterMembership.get().getProject());
     }
 
     @Override
@@ -182,10 +222,12 @@ public class ProjectsRestService implements ProjectsService {
 
         NotificationRequest notificationRequest = NotificationRequest.builder()
                 .toEmail(newProjectMemberNotVerified.getUser().getEmail())
-                .subject("Your task.io email verification code!")
+                .subject("Your task.io invite confirmation code!")
                 .text("Dear " + newProjectMemberNotVerified.getUser().getFullName() +
                         "!\n" + inviter.getFullName() + "<" + inviter.getEmail() + "> was invited you to a project: " +
-                        inviterMembership.get().getProject().getName() + ".\nIf you want to join this project, here" +
+                        inviterMembership.get().getProject().getName() + "<" +
+                        inviterMembership.get().getProject().getProjectIdentifier() +
+                        ">.\nIf you want to join this project, here" +
                         " is you confirmation code: " + confirmInviteVerificationCode)
                 .build();
 
@@ -295,7 +337,7 @@ public class ProjectsRestService implements ProjectsService {
     }
 
     @Override
-    public void leaveProject(LeaveProjectRequest request, String bearerToken) {
+    public void leave(LeaveProjectRequest request, String bearerToken) {
         User leavingUser = getUserData(bearerToken);
         Optional<ProjectMember> leavingUserMembership = checkUserInProjectAndGetMembership(leavingUser, request.getProjectIdentifier());
 
@@ -334,7 +376,7 @@ public class ProjectsRestService implements ProjectsService {
     }
 
     @Override
-    public ProjectsListResponse getAllProjects(String bearerToken) {
+    public ProjectsListResponse list(String bearerToken) {
         User user = getUserData(bearerToken);
         List<ProjectMember> memberships = projectMemberRepository.findAllByUser(user);
 

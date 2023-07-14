@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import taskio.common.dto.authentication.message.ResponseMessage;
 import taskio.common.dto.projects.confirminvite.ConfirmInviteRequest;
 import taskio.common.dto.projects.create.CreateRequest;
+import taskio.common.dto.projects.delete.DeleteProjectRequest;
 import taskio.common.dto.projects.id.ChangeProjectIdentifierRequest;
 import taskio.common.dto.projects.invite.InviteRequest;
 import taskio.common.dto.projects.leave.LeaveProjectRequest;
@@ -29,9 +30,16 @@ public class ProjectsRestController {
     @PostMapping("/change-identifier")
     public ResponseMessage changeIdentifier(@RequestHeader(HttpHeaders.AUTHORIZATION) String bearerToken,
                                             @Valid @RequestBody ChangeProjectIdentifierRequest request) {
-        projectsService.changeProjectIdentifier(request, bearerToken);
-        return ResponseMessage.withMessage("Successfully changed project indentifier to " +
+        projectsService.changeIdentifier(request, bearerToken);
+        return ResponseMessage.withMessage("Successfully changed project identifier to " +
                 request.getNewProjectIdentifier());
+    }
+
+    @PostMapping("/delete")
+    public ResponseMessage delete(@RequestHeader(HttpHeaders.AUTHORIZATION) String bearerToken,
+                                  @Valid @RequestBody DeleteProjectRequest request) {
+        projectsService.delete(request, bearerToken);
+        return ResponseMessage.withMessage("Successfully deleted " + request.getProjectIdentifier() + "!");
     }
 
     @PostMapping("/invite")
@@ -59,12 +67,12 @@ public class ProjectsRestController {
     @PostMapping("/leave")
     public ResponseMessage leave(@RequestHeader(HttpHeaders.AUTHORIZATION) String bearerToken,
                                  @Valid @RequestBody LeaveProjectRequest request) {
-        projectsService.leaveProject(request, bearerToken);
+        projectsService.leave(request, bearerToken);
         return ResponseMessage.withMessage("You have successfully left the project!");
     }
 
     @PostMapping("/list")
-    public ProjectsListResponse getAllProjects(@RequestHeader(HttpHeaders.AUTHORIZATION) String bearerToken) {
-        return projectsService.getAllProjects(bearerToken);
+    public ProjectsListResponse list(@RequestHeader(HttpHeaders.AUTHORIZATION) String bearerToken) {
+        return projectsService.list(bearerToken);
     }
 }
