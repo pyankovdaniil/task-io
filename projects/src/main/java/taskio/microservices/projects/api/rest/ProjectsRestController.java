@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.bind.annotation.*;
 import taskio.common.dto.authentication.message.ResponseMessage;
+import taskio.common.dto.projects.confirmdelete.ConfirmDeleteRequest;
 import taskio.common.dto.projects.confirminvite.ConfirmInviteRequest;
 import taskio.common.dto.projects.create.CreateRequest;
 import taskio.common.dto.projects.delete.DeleteProjectRequest;
@@ -39,6 +40,13 @@ public class ProjectsRestController {
     public ResponseMessage delete(@RequestHeader(HttpHeaders.AUTHORIZATION) String bearerToken,
                                   @Valid @RequestBody DeleteProjectRequest request) {
         projectsService.delete(request, bearerToken);
+        return ResponseMessage.withMessage("Confirmation code to delete project <" + request.getProjectIdentifier() +
+                "> was successfully sent to your email!");
+    }
+
+    @PostMapping("/confirm-delete")
+    public ResponseMessage confirmDelete(@Valid @RequestBody ConfirmDeleteRequest request) {
+        projectsService.confirmDelete(request);
         return ResponseMessage.withMessage("Successfully deleted " + request.getProjectIdentifier() + "!");
     }
 
@@ -46,8 +54,8 @@ public class ProjectsRestController {
     public ResponseMessage invite(@RequestHeader(HttpHeaders.AUTHORIZATION) String bearerToken,
                                   @Valid @RequestBody InviteRequest request) {
         projectsService.invite(request, bearerToken);
-        return ResponseMessage.withMessage("Successfully send confirm invite to " + request.getInvitedPersonEmail() +
-                "! Now he can confirm this invitation from his email!");
+        return ResponseMessage.withMessage("Confirmation code to invite <" + request.getInvitedPersonEmail() +
+                "> to project <" + request.getProjectIdentifier() + "> was successfully sent to your email!");
     }
 
     @PostMapping("/confirm-invite")

@@ -31,9 +31,11 @@ projects:
     root: WARN
     api: INFO
   confirmInviteVerificationCodeLength: "8"
+  confirmDeleteVerificationCodeLength: "12"
   mongo:
     database: projects
     notVerifiedProjectMemberExpireTimeSeconds: 60
+    notVerifiedProjectDeletionExpireTimeSeconds: 60
   deployment:
     replicasCount: "1"
     ports:

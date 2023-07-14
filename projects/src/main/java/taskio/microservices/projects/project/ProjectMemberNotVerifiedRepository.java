@@ -3,6 +3,7 @@ package taskio.microservices.projects.project;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 import taskio.common.model.authentication.User;
+import taskio.common.model.projects.Project;
 import taskio.common.model.projects.ProjectMemberNotVerified;
 
 import java.util.List;

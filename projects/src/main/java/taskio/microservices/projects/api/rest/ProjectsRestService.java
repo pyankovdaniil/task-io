@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import taskio.common.dto.authentication.userdata.UserDataFromEmailRequest;
 import taskio.common.dto.errors.logic.ErrorCode;
 import taskio.common.dto.notification.NotificationRequest;
+import taskio.common.dto.projects.confirmdelete.ConfirmDeleteRequest;
 import taskio.common.dto.projects.confirminvite.ConfirmInviteRequest;
 import taskio.common.dto.projects.create.CreateRequest;
 import taskio.common.dto.projects.delete.DeleteProjectRequest;
@@ -23,14 +24,12 @@ import taskio.common.dto.projects.makeadmin.MakeAdminRequest;
 import taskio.common.exceptions.projects.*;
 import taskio.common.exceptions.user.UserNotFoundException;
 import taskio.common.model.authentication.User;
-import taskio.common.model.projects.Project;
-import taskio.common.model.projects.ProjectMember;
-import taskio.common.model.projects.ProjectMemberNotVerified;
-import taskio.common.model.projects.ProjectMemberRole;
+import taskio.common.model.projects.*;
 import taskio.common.uuid.CustomCompositeUuidGenerator;
 import taskio.common.verification.VerificationCodeGenerator;
 import taskio.configs.amqp.RabbitMQMessageProducer;
 import taskio.microservices.projects.clients.AuthenticationClient;
+import taskio.microservices.projects.project.ProjectDeletionNotVerifiedRepository;
 import taskio.microservices.projects.project.ProjectMemberNotVerifiedRepository;
 import taskio.microservices.projects.project.ProjectMemberRepository;
 import taskio.microservices.projects.project.ProjectRepository;
@@ -46,8 +45,11 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 @Slf4j
 public class ProjectsRestService implements ProjectsService {
-    @Value("${projects.invite.verification-code-length}")
+    @Value("${projects.invite.confirmation-code-length}")
     private int confirmInviteVerificationCodeLength;
+
+    @Value("${project.delete.confirmation-code-length}")
+    private int confirmDeleteVerificationCodeLength;
 
     @Value("${rabbitmq.exchanges.taskio-internal}")
     private String rabbitExchange;
@@ -58,14 +60,28 @@ public class ProjectsRestService implements ProjectsService {
     @Value("${not-verified-project-member-expire-time-seconds}")
     private int notVerifiedProjectMemberExpireTimeSeconds;
 
+    @Value("${not-verified-project-deletion-expire-time-seconds}")
+    private int notVerifiedProjectDeletionExpireTimeSeconds;
+
     private final AuthenticationClient authenticationClient;
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
+    private final ProjectDeletionNotVerifiedRepository projectDeletionNotVerifiedRepository;
     private final CustomCompositeUuidGenerator uuidGenerator;
     private final ProjectMemberNotVerifiedRepository projectMemberNotVerifiedRepository;
     private final VerificationCodeGenerator verificationCodeGenerator;
     private final RabbitMQMessageProducer messageProducer;
     private final MongoOperations mongoOps;
+
+    private final Index inviteMemberIndex = new Index()
+            .named("project_member_not_verified_expire_time_seconds_index")
+            .on("createdAt", Sort.Direction.ASC)
+            .expire(notVerifiedProjectMemberExpireTimeSeconds, TimeUnit.SECONDS);
+
+    private final Index deleteProjectIndex = new Index()
+            .named("project_deletion_not_verified_expire_time_seconds_index")
+            .on("createdAt", Sort.Direction.ASC)
+            .expire(notVerifiedProjectDeletionExpireTimeSeconds, TimeUnit.SECONDS);
 
     @Override
     public void create(CreateRequest request, String bearerToken) {
@@ -143,35 +159,76 @@ public class ProjectsRestService implements ProjectsService {
         Optional<ProjectMember> deleterMembership =
                 checkUserInProjectAndGetMembership(deleter, request.getProjectIdentifier());
 
-        if (deleterMembership.isEmpty()) {
+        checkDeleterMembership(deleterMembership, request);
+
+        String confirmDeleteVerificationCode = verificationCodeGenerator
+                .generateVerificationCode(confirmDeleteVerificationCodeLength).toUpperCase();
+
+        ProjectDeletionNotVerified newProjectDeletionNotVerified = ProjectDeletionNotVerified.builder()
+                .id(uuidGenerator.generateCustomUuid(ProjectDeletionNotVerified.class.getSimpleName()))
+                .verificationCode(confirmDeleteVerificationCode)
+                .user(deleter)
+                .project(deleterMembership.get().getProject())
+                .createdAt(Date.from(Instant.now()))
+                .build();
+
+        log.info("Created delete confirmation code: {}", confirmDeleteVerificationCode);
+
+        NotificationRequest notificationRequest = NotificationRequest.builder()
+                .toEmail(deleter.getEmail())
+                .subject("Your task.io delete project confirmation code!")
+                .text("Dear " + deleter.getFullName() +
+                        "!\n" + "We received request to delete your project " +
+                        deleterMembership.get().getProject().getName() + "<" +
+                        deleterMembership.get().getProject().getProjectIdentifier() +
+                        ">!\nIf you want to delete this project, here" +
+                        " is you confirmation code: " + confirmDeleteVerificationCode)
+                .build();
+
+        messageProducer.publish(notificationRequest, rabbitExchange, rabbitRoutingKey);
+        mongoOps.indexOps(ProjectDeletionNotVerified.class).ensureIndex(deleteProjectIndex);
+        projectDeletionNotVerifiedRepository.save(newProjectDeletionNotVerified);
+    }
+
+    @Override
+    public void confirmDelete(ConfirmDeleteRequest request) {
+        User deleter = authenticationClient.getUserData(UserDataFromEmailRequest.builder()
+                .email(request.getEmail())
+                .build());
+
+        Optional<ProjectMember> deleterMembership =
+                checkUserInProjectAndGetMembership(deleter, request.getProjectIdentifier());
+
+        checkDeleterMembership(deleterMembership, request);
+
+        Optional<ProjectDeletionNotVerified> projectDeletion = Optional.empty();
+        for (ProjectDeletionNotVerified deletion : projectDeletionNotVerifiedRepository.findAllByUser(deleter)) {
+            if (deletion.getProject().getProjectIdentifier().equals(request.getProjectIdentifier())) {
+                projectDeletion = Optional.of(deletion);
+                break;
+            }
+        }
+
+        if (projectDeletion.isEmpty()) {
             throw UserIsNotInProjectException.builder()
                     .errorDate(Date.from(Instant.now()))
-                    .errorMessage("You are not a member of a project you try to delete!")
-                    .errorCode(ErrorCode.INVITER_IS_NOT_MEMBER)
+                    .errorMessage("You are not a member of a project you try confirm delete of!")
+                    .errorCode(ErrorCode.USER_IS_NOT_IN_PROJECT)
                     .dataCausedError(request)
                     .build();
         }
 
-        boolean isCreatorInProject = deleterMembership.get().getProject().getMembers().stream().anyMatch(member -> member.getRole().equals(ProjectMemberRole.CREATOR));
-        if (isCreatorInProject && !deleterMembership.get().getRole().equals(ProjectMemberRole.CREATOR)) {
-            throw UserCanNotDeleteProjectException.builder()
+        if (!projectDeletion.get().getVerificationCode().equals(request.getDeleteConfirmationCode())) {
+            throw InvalidDeleteConfirmationCodeException.builder()
                     .errorDate(Date.from(Instant.now()))
-                    .errorMessage("You are not a creator of a project you try to delete!")
-                    .errorCode(ErrorCode.USER_CAN_NOT_DELETE_PROJECT)
-                    .dataCausedError(request)
-                    .build();
-        }
-
-        if (!isCreatorInProject && !deleterMembership.get().getRole().equals(ProjectMemberRole.ADMIN)) {
-            throw UserCanNotDeleteProjectException.builder()
-                    .errorDate(Date.from(Instant.now()))
-                    .errorMessage("You are not an admin of a project you try to delete!")
-                    .errorCode(ErrorCode.USER_CAN_NOT_DELETE_PROJECT)
+                    .errorMessage("Invalid delete confirmation code!")
+                    .errorCode(ErrorCode.INVALID_DELETE_CONFIRMATION_CODE)
                     .dataCausedError(request)
                     .build();
         }
 
         projectMemberRepository.deleteAll(deleterMembership.get().getProject().getMembers());
+        projectDeletionNotVerifiedRepository.delete(projectDeletion.get());
         projectRepository.delete(deleterMembership.get().getProject());
     }
 
@@ -232,12 +289,7 @@ public class ProjectsRestService implements ProjectsService {
                 .build();
 
         messageProducer.publish(notificationRequest, rabbitExchange, rabbitRoutingKey);
-
-        mongoOps.indexOps(ProjectMemberNotVerified.class).ensureIndex(new Index()
-                .named("project_member_not_verified_expire_time_seconds_index")
-                .on("createdAt", Sort.Direction.ASC)
-                .expire(notVerifiedProjectMemberExpireTimeSeconds, TimeUnit.SECONDS));
-
+        mongoOps.indexOps(ProjectMemberNotVerified.class).ensureIndex(inviteMemberIndex);
         projectMemberNotVerifiedRepository.save(newProjectMemberNotVerified);
     }
 
@@ -247,8 +299,13 @@ public class ProjectsRestService implements ProjectsService {
                 .email(request.getEmail())
                 .build());
 
-        Optional<ProjectMemberNotVerified> userInvitation =
-                checkUserInProjectAndGetNotVerifiedMembership(notVerifiedInvitedUser, request.getProjectIdentifier());
+        Optional<ProjectMemberNotVerified> userInvitation = Optional.empty();
+        for (ProjectMemberNotVerified memberNotVerified : projectMemberNotVerifiedRepository
+                .findAllByUser(notVerifiedInvitedUser)) {
+            if (memberNotVerified.getProject().getProjectIdentifier().equals(request.getProjectIdentifier())) {
+                userInvitation = Optional.of(memberNotVerified);
+            }
+        }
 
         if (userInvitation.isEmpty()) {
             throw UserWasNotInvitedToProjectException.builder()
@@ -405,16 +462,6 @@ public class ProjectsRestService implements ProjectsService {
         return Optional.empty();
     }
 
-    private Optional<ProjectMemberNotVerified> checkUserInProjectAndGetNotVerifiedMembership(User user, String projectIdentifier) {
-        for (ProjectMemberNotVerified membership : projectMemberNotVerifiedRepository.findAllByUser(user)) {
-            if (membership.getProject().getProjectIdentifier().equals(projectIdentifier)) {
-                return Optional.of(membership);
-            }
-        }
-
-        return Optional.empty();
-    }
-
     private User getUserData(String bearerToken) {
         try {
             return authenticationClient.getUserData(bearerToken);
@@ -424,6 +471,36 @@ public class ProjectsRestService implements ProjectsService {
                     .errorMessage("User with this email is not in database")
                     .errorCode(ErrorCode.USER_NOT_FOUND_BY_EMAIL_IN_DATABASE)
                     .dataCausedError(bearerToken)
+                    .build();
+        }
+    }
+
+    private void checkDeleterMembership(Optional<ProjectMember> deleterMembership, Object request) {
+        if (deleterMembership.isEmpty()) {
+            throw UserIsNotInProjectException.builder()
+                    .errorDate(Date.from(Instant.now()))
+                    .errorMessage("You are not a member of a project you try to delete!")
+                    .errorCode(ErrorCode.USER_IS_NOT_IN_PROJECT)
+                    .dataCausedError(request)
+                    .build();
+        }
+
+        boolean isCreatorInProject = deleterMembership.get().getProject().getMembers().stream().anyMatch(member -> member.getRole().equals(ProjectMemberRole.CREATOR));
+        if (isCreatorInProject && !deleterMembership.get().getRole().equals(ProjectMemberRole.CREATOR)) {
+            throw UserCanNotDeleteProjectException.builder()
+                    .errorDate(Date.from(Instant.now()))
+                    .errorMessage("You are not a creator of a project you try to delete!")
+                    .errorCode(ErrorCode.USER_CAN_NOT_DELETE_PROJECT)
+                    .dataCausedError(request)
+                    .build();
+        }
+
+        if (!isCreatorInProject && !deleterMembership.get().getRole().equals(ProjectMemberRole.ADMIN)) {
+            throw UserCanNotDeleteProjectException.builder()
+                    .errorDate(Date.from(Instant.now()))
+                    .errorMessage("You are not an admin of a project you try to delete!")
+                    .errorCode(ErrorCode.USER_CAN_NOT_DELETE_PROJECT)
+                    .dataCausedError(request)
                     .build();
         }
     }
